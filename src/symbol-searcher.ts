@@ -24,11 +24,12 @@ export abstract class SymbolSearcher {
    * Признак, что контейнер подходит под условия.
    * @param container Контейнер.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   protected abstract needGetSymbol(container: vscode.DocumentSymbol): Promise<boolean>;
 
   /**
    * Найти описание.
-   * @param container Контенер.
+   * @param container Контейнер.
    * @param findResult Список найденных описаний.
    * @returns true - если описание найдено, иначе false.
    */
@@ -57,7 +58,9 @@ export abstract class SymbolSearcher {
    * Вернуть описание.
    * @param documentUri Uri документа, в котором ищем.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   public async localGetSymbols(documentUri: vscode.Uri): Promise<IElementDetail[]> {
+    // TODO: что-то мне any[] не нравится. Мы вроде возвращаем IElementDetail[]?
     let result: any[] = [];
 
     this.documentUri = documentUri;
@@ -90,27 +93,34 @@ export abstract class SymbolSearcher {
    * @param documentUri Uri документа, в котором ищем описание.
    * @param wrapperDescription Определение из обертки, на основе котрого ищем описание.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   public static async getSymbols(
     documentUri: vscode.Uri,
     wrapperDescription: ProgrammingConstruct,
   ): Promise<IElementDetail[]>;
+  // TODO: а тело метода куда делось?
+
   /**
    * Вернуть описание.
    * @param documentUri Uri документа, в котором ищем описание.
    * @param tokens Токены поиска.
    * @param range Диапазон поиска.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   public static async getSymbols(
     documentUri: vscode.Uri,
     tokens: string,
     range: vscode.Range,
   ): Promise<IElementDetail[]>;
+  // TODO: а тело метода куда делось?
+
   /**
    * Вернуть описание.
    * @param documentUri Uri документа, в котором ищем описание.
-   * @param wrapperDescriptionOrToken Определение из обертки или токены поиска, на основе котрых ищем описание.
+   * @param wrapperDescriptionOrToken Определение из обертки или токены поиска, на основе которых ищем описание.
    * @param range Диапазон поиска.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   public static async getSymbols(
     documentUri: vscode.Uri,
     wrapperDescriptionOrToken: ProgrammingConstruct | string,
@@ -140,6 +150,7 @@ class SymbolSearcherByTokenAndRange extends SymbolSearcher {
    * Признак, что контейнер подходит под условия при сравнении с переданными токенами.
    * @param container Контейнер.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   protected async needGetSymbol(container: vscode.DocumentSymbol): Promise<boolean> {
     if (this.token === container.name) {
       const location = container.selectionRange;
@@ -172,6 +183,7 @@ class SymbolSearcherByWrapperDescription extends SymbolSearcher {
   /** Вернуть строку по позиции.
    * @param position Позиция.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   private async getTextLine(position: vscode.Position): Promise<string> {
     if (!this.textLines.length) {
       this.textLines = await VSCodeApi.loadDocumentLine(this.documentUri!);
@@ -183,6 +195,7 @@ class SymbolSearcherByWrapperDescription extends SymbolSearcher {
    * Признак, что контейнер подходит под условия при сравнении определением из обертки.
    * @param container Контейнер.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
   protected async needGetSymbol(container: vscode.DocumentSymbol): Promise<boolean> {
     const textLine = await this.getTextLine(container.selectionRange.start);
     return Promise.resolve(

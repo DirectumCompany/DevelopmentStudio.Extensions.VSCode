@@ -4,12 +4,16 @@ import { DocumentSymbolLoader } from './symbol-loader';
 import { SymbolSearcher } from './symbol-searcher';
 
 /** Дополнительный поставщик определений. */
+// FIXME: переименовать в AdditionalDefinitionProvider
 export class AdditionalDefinitionProvaider implements vscode.DefinitionProvider {
   /**
    *  Вернуть дополнительные определения.
    *  @param document Документ, в котором была вызвана команда.
    *  @param position Позиция, в которой была вызвана команда.
    */
+  // TODO: в документирующем комментарии не указано, что возвращается.
+  // FIXME: что-то по-моему типы не совпадают? Указано, что возвращается vscode.Definition, а судя по коду vscode.Definition[].
+  // TODO: не указана область видимости метода.
   async getAdditionalDefinitions(
     document: vscode.TextDocument,
     position: vscode.Position,
@@ -37,9 +41,12 @@ export class AdditionalDefinitionProvaider implements vscode.DefinitionProvider 
     return Promise.resolve(modifiedDefinitions);
   }
 
-  /** Признак, что идет работа над поиском определния. */
+  /** Признак, что идет работа над поиском определения. */
   private lock: boolean = false;
 
+  // FIXME: нет документирующего комментария
+  // TODO: не указана область видимости метода.
+  // FIXME: что-то по-моему типы не совпадают? Указано, что возвращается vscode.Definition, а судя по коду vscode.Definition[].
   async provideDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Definition | null> {
     if (this.lock) {
       return Promise.resolve(null);
