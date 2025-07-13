@@ -98,8 +98,6 @@ export abstract class SymbolSearcher {
     documentUri: vscode.Uri,
     wrapperDescription: ProgrammingConstruct,
   ): Promise<IElementDetail[]>;
-  // TODO: а тело метода куда делось?
-
   /**
    * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
@@ -112,8 +110,6 @@ export abstract class SymbolSearcher {
     tokens: string,
     range: vscode.Range,
   ): Promise<IElementDetail[]>;
-  // TODO: а тело метода куда делось?
-
   /**
    * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
