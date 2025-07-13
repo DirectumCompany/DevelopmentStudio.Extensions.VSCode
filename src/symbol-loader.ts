@@ -35,10 +35,9 @@ export class DocumentSymbolLoader {
     //     /\/\/\/\s*<see href=['"`]([^']*?)['"`]\s*\/>/
     //                                   ^--- ленивый квантификатор
     const regexHref = /\/\/\/\s*<see href=['"`]([^']*)['"`]\s*\/>/;
-    let match; // TODO: это точно нужно?
     for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
       const line = this.documentLines[lineNumber];
-      match = line.match(regexHref);
+      const match = line.match(regexHref);
       if (match) {
         return Promise.resolve(vscode.Uri.parse(match[1].toString()));
       }
@@ -58,11 +57,12 @@ export class DocumentSymbolLoader {
    * Вернуть определение из обертки.
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
    */
-  private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct> {
+  private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct | undefined> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
-    // TODO: а мы уверены, что в SymbolWrapper есть хотя бы один элемент?
-    return Promise.resolve(ProgrammingConstruct.Create(symbolWrapper[0]));
+    if (symbolWrapper.length) {
+      return Promise.resolve(ProgrammingConstruct.Create(symbolWrapper[0]));
+    }
   }
 
   /**

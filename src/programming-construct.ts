@@ -46,11 +46,7 @@ export class ProgrammingConstruct {
    * @returns true - если элемент равен текущему, иначе false.
    */
   public IsEqual(element: IElementDetail): boolean {
-    // TODO: схлопнуть условие return this.isNameEqual(element) && this.isDetailEqual(element)
-    if (this.isNameEqual(element)) {
-      return this.isDetailEqual(element);
-    }
-    return false;
+    return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
   /**
@@ -123,9 +119,6 @@ class Structure extends ProgrammingConstruct {
    * @returns true - если элемент равен текущему, иначе false.
    */
   protected isDetailEqual(element: IElementDetail): boolean {
-    // TODO: комментарий совсем непонятный. Сделай два комментария к кейсам.
-    // Сравнение для структур: при объявлении в обертке - интерфейс,
-    // при объявлении в структурах на прикладной - класс.
     switch (element.container.kind) {
       case vscode.SymbolKind.Class: {
         return element.container.detail === this.getStructureWitoutPrefix();

@@ -60,8 +60,7 @@ export abstract class SymbolSearcher {
    * @returns Массив с детальными описаниями.
    */
   public async localGetSymbols(documentUri: vscode.Uri): Promise<IElementDetail[]> {
-    // TODO: что-то мне any[] не нравится. Мы вроде возвращаем IElementDetail[]?
-    let result: any[] = [];
+    let result: IElementDetail[] = [];
 
     this.documentUri = documentUri;
     const symbols = await VSCodeApi.getSymbols(this.documentUri);
@@ -75,7 +74,7 @@ export abstract class SymbolSearcher {
           result.push(
             ...findResult.map((element) => ({
               container: element,
-              parent: this.parent,
+              parent: this.parent!,
             })),
           );
         }
