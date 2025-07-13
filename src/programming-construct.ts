@@ -23,8 +23,8 @@ export class ProgrammingConstruct {
   /**
    * Признак, что детальная информация переданного для сравнения элемента равна текущей детальной информации.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   protected isDetailEqual(element: IElementDetail): boolean {
     // Сравнение для всех остальных.
     return element.container.detail === this.detail;
@@ -43,8 +43,8 @@ export class ProgrammingConstruct {
 
   /** Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public IsEqual(element: IElementDetail): boolean {
     // TODO: схлопнуть условие return this.isNameEqual(element) && this.isDetailEqual(element)
     if (this.isNameEqual(element)) {
@@ -56,8 +56,8 @@ export class ProgrammingConstruct {
   /**
    * Создать объект в зависимости от его типа.
    * @param symbol Описание.
+   * @returns Возвращается созданный в зависимости от описания объект.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public static Create(symbol: IElementDetail): ProgrammingConstruct {
     switch (symbol.container.kind) {
       case vscode.SymbolKind.Method: {
@@ -96,10 +96,9 @@ class Structure extends ProgrammingConstruct {
   /**
    * Вернуть детальное описание без префикса.
    * @description Используется для структур.
+   * @returns Детальное описание структуры без префикса "I".
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // TODO: не указан возвращаемый тип.
-  private getStructureWitoutPrefix() {
+  private getStructureWitoutPrefix(): string {
     if (!this.structureWithoutPrefix) {
       // TODO: не совсем понятно, что делает регэксп. Есть подозрение, что он
       // может быть неправильным. Хотелось бы получить пример того, что на него
@@ -109,8 +108,11 @@ class Structure extends ProgrammingConstruct {
     return this.structureWithoutPrefix;
   }
 
-  /** Проверить равеноство по именам. */
-  // TODO: в документирующем комментарии не указано, что возвращается.
+  /**
+   * Проверить равеноство по именам.
+   * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текщуему, иначе false.
+   */
   protected isNameEqual(element: IElementDetail): boolean {
     return this.searchNames.includes(element.container.name);
   }
@@ -118,8 +120,8 @@ class Structure extends ProgrammingConstruct {
   /**
    * Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   protected isDetailEqual(element: IElementDetail): boolean {
     // TODO: комментарий совсем непонятный. Сделай два комментария к кейсам.
     // Сравнение для структур: при объявлении в обертке - интерфейс,
@@ -151,10 +153,11 @@ class Function extends ProgrammingConstruct {
   /** Детальное описание функции без первого параметра. */
   private functionWithoutFirstParam?: string;
 
-  /** Вернуть описание функции без первого параметра. */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // TODO: не указан возвращаемый тип.
-  private getFunctionWithoutFirstParam() {
+  /**
+   * Вернуть описание функции без первого параметра.
+   * @returns Описание функции без первого параметра.
+   */
+  private getFunctionWithoutFirstParam(): string {
     if (!this.functionWithoutFirstParam) {
       // TODO: непонятно, что это извлекается. И что будет, если после первой открытой скобки попадётся точка.
       let definition = this.detail.substring(this.detail.lastIndexOf('.', this.detail.indexOf('(')) + 1);
@@ -172,8 +175,7 @@ class Function extends ProgrammingConstruct {
    * @returns true - если переданное детальное описание, без учета параметров по умолчанию
    * равно текущему детальному описанию, иначе false.
    */
-  // TODO: не указан возвращаемый тип.
-  private getWithoutDefaultParams(detail: string) {
+  private getWithoutDefaultParams(detail: string): string {
     const result: string[] = [];
     let params = detail.substring(detail.indexOf('(') + 1, detail.lastIndexOf(')'));
     // TODO: на trimEnd() плейграунд ругается. Если в объявлении параметров есть
@@ -184,33 +186,30 @@ class Function extends ProgrammingConstruct {
 
   /** Признак, что функция статическая.
    * @param textLine Строка описания.
+   * @returns true - если функция статическая, иначе - false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // TODO: не указан возвращаемый тип.
-  private isStatic(textLine: string) {
+  private isStatic(textLine: string): boolean {
     return textLine?.split(/\s/).includes('static');
   }
 
   /**
    * Вернуть описание функции для сравнения.
    * @param element Элемент для сравнения.
+   * @returns Описание функции для сравнения.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   private getFunctionDetailForCompare(element: IElementDetail): string {
     // Если функция изолированная, функция модуля или статическая, то первый параметр должен остаться.
     if (['IsolatedFunctions', 'ModuleFunctions'].includes(element.parent) || this.isStatic(element.textLine!)) {
       return this.detail;
-    // FIXME: else не нужен.
-    } else {
-      return this.getFunctionWithoutFirstParam();
     }
+    return this.getFunctionWithoutFirstParam();
   }
 
   /**
    * Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   protected isDetailEqual(element: IElementDetail): boolean {
     // Сравнение для функций
     if (element.container.kind === vscode.SymbolKind.Method) {

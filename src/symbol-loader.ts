@@ -24,7 +24,6 @@ export class DocumentSymbolLoader {
    * Вернуть ссылку на документ из href-комментария.
    * @returns Возвращает Uri на файл с описанием определения или null.
    */
-  // TODO: не указан возвращаемый тип.
   private async getUriFromHrefComment(): Promise<vscode.Uri | null> {
     // TODO: регэксп потенциально опасен. Он не останавливается после нахождения
     // первого вхождения, а идёт дальше, захватывая в группу лишние символы.
@@ -51,8 +50,7 @@ export class DocumentSymbolLoader {
    * Вернуть токен.
    * @returns Токен из массива строк по заданному диапазону.
    */
-  // TODO: не указан возвращаемый тип.
-  private getToken() {
+  private getToken(): string {
     return this.documentLines[this.range.start.line].substring(this.range.start.character, this.range.end.character);
   }
 
@@ -60,16 +58,17 @@ export class DocumentSymbolLoader {
    * Вернуть определение из обертки.
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
    */
-  // TODO: не указан возвращаемый тип.
-  private async getWrapperDocumentSymbol() {
+  private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
     // TODO: а мы уверены, что в SymbolWrapper есть хотя бы один элемент?
     return Promise.resolve(ProgrammingConstruct.Create(symbolWrapper[0]));
   }
 
-  /** Попытаться загрузить определение. */
-  // TODO: в документирующем комментарии не указано, что возвращает метод.
+  /**
+   * Попытаться загрузить определение.
+   * @returns true - если загрузить определение удалось, иначе false.
+   */
   public async tryLoadDocumentSymbols(): Promise<boolean> {
     if (this.needLoadDocumentSymbol()) {
       this.documentLines = await VSCodeApi.loadDocumentLine(this.uri);
@@ -84,10 +83,11 @@ export class DocumentSymbolLoader {
     return Promise.resolve(false);
   }
 
-  /** Проверить, нужно ли загружать конструкцию. */
-  // TODO: в документирующем комментарии не указано, что возвращает метод.
-  // TODO: не указан возвращаемый тип.
-  private needLoadDocumentSymbol() {
+  /**
+   * Проверить, нужно ли загружать конструкцию.
+   * @returns true - если нужно загржуать, иначе false.
+   */
+  private needLoadDocumentSymbol(): boolean {
     return this.uri.fsPath.endsWith('g.cs');
   }
 
