@@ -25,8 +25,7 @@ export class ProgrammingConstruct {
    * @param element Элемент для сравнения.
    */
   // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: переименовать в isDetailEqual
-  protected isDeatilEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: IElementDetail): boolean {
     // Сравнение для всех остальных.
     return element.container.detail === this.detail;
   }
@@ -49,7 +48,7 @@ export class ProgrammingConstruct {
   public IsEqual(element: IElementDetail): boolean {
     // TODO: схлопнуть условие return this.isNameEqual(element) && this.isDetailEqual(element)
     if (this.isNameEqual(element)) {
-      return this.isDeatilEqual(element);
+      return this.isDetailEqual(element);
     }
     return false;
   }
@@ -81,8 +80,7 @@ class Structure extends ProgrammingConstruct {
   private searchNames: string[] = [];
 
   /** Детальное описание структуры без префикса. */
-  // FIXME: переименовать в structureWithoutPrefix
-  private structureWitoutPrefix?: string;
+  private structureWithoutPrefix?: string;
 
   /**
    * Добавить токены для поиска.
@@ -102,13 +100,13 @@ class Structure extends ProgrammingConstruct {
   // TODO: в документирующем комментарии не указано, что возвращается.
   // TODO: не указан возвращаемый тип.
   private getStructureWitoutPrefix() {
-    if (!this.structureWitoutPrefix) {
+    if (!this.structureWithoutPrefix) {
       // TODO: не совсем понятно, что делает регэксп. Есть подозрение, что он
       // может быть неправильным. Хотелось бы получить пример того, что на него
       // подаётся и что должно получиться в результате.
-      this.structureWitoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
+      this.structureWithoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
     }
-    return this.structureWitoutPrefix;
+    return this.structureWithoutPrefix;
   }
 
   /** Проверить равеноство по именам. */
@@ -122,8 +120,7 @@ class Structure extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    */
   // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: переименовать в isDetailEqual
-  protected isDeatilEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: IElementDetail): boolean {
     // TODO: комментарий совсем непонятный. Сделай два комментария к кейсам.
     // Сравнение для структур: при объявлении в обертке - интерфейс,
     // при объявлении в структурах на прикладной - класс.
@@ -138,7 +135,7 @@ class Structure extends ProgrammingConstruct {
         );
       }
       default: {
-        return super.isDeatilEqual(element);
+        return super.isDetailEqual(element);
       }
     }
   }
@@ -214,8 +211,7 @@ class Function extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    */
   // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: переименовать в isDetailEqual
-  protected isDeatilEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: IElementDetail): boolean {
     // Сравнение для функций
     if (element.container.kind === vscode.SymbolKind.Method) {
       const functionDetail = this.getFunctionDetailForCompare(element);
@@ -224,6 +220,6 @@ class Function extends ProgrammingConstruct {
         this.getWithoutDefaultParams(element.container.detail) === functionDetail
       );
     }
-    return super.isDeatilEqual(element);
+    return super.isDetailEqual(element);
   }
 }

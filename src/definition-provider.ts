@@ -4,8 +4,7 @@ import { DocumentSymbolLoader } from './symbol-loader';
 import { SymbolSearcher } from './symbol-searcher';
 
 /** Дополнительный поставщик определений. */
-// FIXME: переименовать в AdditionalDefinitionProvider
-export class AdditionalDefinitionProvaider implements vscode.DefinitionProvider {
+export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
   /**
    *  Вернуть дополнительные определения.
    *  @param document Документ, в котором была вызвана команда.
