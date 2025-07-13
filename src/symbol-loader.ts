@@ -25,16 +25,7 @@ export class DocumentSymbolLoader {
    * @returns Возвращает Uri на файл с описанием определения или null.
    */
   private async getUriFromHrefComment(): Promise<vscode.Uri | null> {
-    // TODO: регэксп потенциально опасен. Он не останавливается после нахождения
-    // первого вхождения, а идёт дальше, захватывая в группу лишние символы.
-    // Чтобы его ограничить, в шаблоне внутри группы нужно перечислить те же
-    // кавычки, что и в ограничивающих условиях:
-    //     /\/\/\/\s*<see href=['"`]([^'"`]*)['"`]\s*\/>/
-    //                                  ^--- доп. кавычки
-    // или заменить «жадный» квантификатор * на «ленивый» *? :
-    //     /\/\/\/\s*<see href=['"`]([^']*?)['"`]\s*\/>/
-    //                                   ^--- ленивый квантификатор
-    const regexHref = /\/\/\/\s*<see href=['"`]([^']*)['"`]\s*\/>/;
+    const regexHref = /\/\/\/\s*<see href="([^"]*)"\s*\/>/;
     for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
       const line = this.documentLines[lineNumber];
       const match = line.match(regexHref);
