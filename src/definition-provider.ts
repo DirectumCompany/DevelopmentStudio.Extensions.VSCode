@@ -11,7 +11,6 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
    *  @param position Позиция, в которой была вызвана команда.
    *  @returns Определение символа, представляемого в виде одного или нескольких {@link vscode.Location местоположений}.
    */
-  // FIXME: что-то по-моему типы не совпадают? Указано, что возвращается vscode.Definition, а судя по коду vscode.Definition[].
   private async getAdditionalDefinitions(
     document: vscode.TextDocument,
     position: vscode.Position,
@@ -42,7 +41,6 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
   /** Признак, что идет работа над поиском определения. */
   private lock: boolean = false;
 
-  // FIXME: что-то по-моему типы не совпадают? Указано, что возвращается vscode.Definition, а судя по коду vscode.Definition[].
   /**
    * Предоставить определение символа в заданной позиции документа.
    * @param document Документ, в котором была вызвана команда.
