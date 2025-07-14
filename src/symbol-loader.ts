@@ -51,7 +51,7 @@ export class DocumentSymbolLoader {
   private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct | undefined> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
-    if (symbolWrapper.length) {
+    if (symbolWrapper.length > 0) {
       return Promise.resolve(ProgrammingConstruct.Create(symbolWrapper[0]));
     }
   }

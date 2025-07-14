@@ -65,7 +65,7 @@ export abstract class SymbolSearcher {
     this.documentUri = documentUri;
     const symbols = await VSCodeApi.getSymbols(this.documentUri);
 
-    if (symbols.length) {
+    if (symbols.length > 0) {
       for (const symbol of symbols) {
         this.parent = symbol.name;
 
@@ -180,7 +180,7 @@ class SymbolSearcherByWrapperDescription extends SymbolSearcher {
    * @returns Строка по переданной позиции.
    */
   private async getTextLine(position: vscode.Position): Promise<string> {
-    if (!this.textLines.length) {
+    if (this.textLines.length === 0) {
       this.textLines = await VSCodeApi.loadDocumentLine(this.documentUri!);
     }
     return Promise.resolve(this.textLines[position.line]);
