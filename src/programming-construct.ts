@@ -148,14 +148,13 @@ class Function extends ProgrammingConstruct {
   /**
    * Вернуть описание функции без первого параметра.
    * @returns Описание функции без первого параметра.
+   * @description На вход поступает: 'GetExtensionValidationError(IOfficialDocument officialDocument, String extension)'.
+   * На выходе ожидаем: 'GetExtensionValidationError(String extension)'.
    */
   private getFunctionWithoutFirstParam(): string {
     if (!this.functionWithoutFirstParam) {
-      // TODO: непонятно, что это извлекается. И что будет, если после первой открытой скобки попадётся точка.
-      let definition = this.detail.substring(this.detail.lastIndexOf('.', this.detail.indexOf('(')) + 1);
-      definition = definition.substring(0, definition.indexOf(')') + 1);
+      let definition = this.detail;
       definition = definition.replace(/(\()([\w.<>]+)\s(\w+)(,)?\s*/, '$1');
-      // TODO: хотелось бы комментарий с примерами. Не могу мысленно представить, что здесь делается.
       this.functionWithoutFirstParam = definition.toString();
     }
     return this.functionWithoutFirstParam;
