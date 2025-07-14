@@ -18,7 +18,7 @@ export class DocumentSymbolLoader {
   public originalUri?: vscode.Uri | null;
 
   /** Описание из враппера. */
-  public documentSymbol?: ProgrammingConstruct;
+  public documentSymbol?: ProgrammingConstruct | null;
 
   /**
    * Вернуть ссылку на документ из href-комментария.
@@ -48,12 +48,13 @@ export class DocumentSymbolLoader {
    * Вернуть определение из обертки.
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
    */
-  private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct | undefined> {
+  private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct | null> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
     if (symbolWrapper.length > 0) {
       return Promise.resolve(ProgrammingConstruct.Create(symbolWrapper[0]));
     }
+    return Promise.resolve(null);
   }
 
   /**
