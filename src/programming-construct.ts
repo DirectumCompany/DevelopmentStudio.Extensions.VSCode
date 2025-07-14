@@ -96,7 +96,7 @@ class Structure extends ProgrammingConstruct {
    * Пример того, что подается на вход: 'Sungero.Commons.Structures.Module.IArioFact'.
    * На выходе должно получиться: 'Sungero.Commons.Structures.Module.ArioFact'.
    */
-  private getStructureWitoutPrefix(): string {
+  private getStructureWithoutPrefix(): string {
     if (!this.structureWithoutPrefix) {
       this.structureWithoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
     }
@@ -120,7 +120,7 @@ class Structure extends ProgrammingConstruct {
   protected isDetailEqual(element: IElementDetail): boolean {
     switch (element.container.kind) {
       case vscode.SymbolKind.Class: {
-        return element.container.detail === this.getStructureWitoutPrefix();
+        return element.container.detail === this.getStructureWithoutPrefix();
       }
       case vscode.SymbolKind.Property: {
         return (
