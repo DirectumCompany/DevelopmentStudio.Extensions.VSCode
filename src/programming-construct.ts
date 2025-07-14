@@ -91,14 +91,13 @@ class Structure extends ProgrammingConstruct {
 
   /**
    * Вернуть детальное описание без префикса.
-   * @description Используется для структур.
    * @returns Детальное описание структуры без префикса "I".
+   * @description Используется для структур.
+   * Пример того, что подается на вход: 'Sungero.Commons.Structures.Module.IArioFact'.
+   * На выходе должно полчиться: 'Sungero.Commons.Structures.Module.ArioFact'.
    */
   private getStructureWitoutPrefix(): string {
     if (!this.structureWithoutPrefix) {
-      // TODO: не совсем понятно, что делает регэксп. Есть подозрение, что он
-      // может быть неправильным. Хотелось бы получить пример того, что на него
-      // подаётся и что должно получиться в результате.
       this.structureWithoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
     }
     return this.structureWithoutPrefix;
