@@ -12,9 +12,6 @@ export class ProgrammingConstruct {
   /** Детальное описание. */
   public detail: string;
 
-  /** Имя предка. */
-  protected parent?: string;
-
   /** Проверить равенство по именам. */
   protected isNameEqual(element: IElementDetail): boolean {
     return this.name === element.container.name;
@@ -38,7 +35,6 @@ export class ProgrammingConstruct {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
-    this.parent = symbol.parent;
   }
 
   /** Признак, что переданный для сравнения элемент равен текущему.
@@ -59,7 +55,9 @@ export class ProgrammingConstruct {
       case vscode.SymbolKind.Method: {
         return new Function(symbol);
       }
-      case vscode.SymbolKind.Property:
+      case vscode.SymbolKind.Property: {
+        return new Property(symbol);
+      }
       case vscode.SymbolKind.Interface: {
         return new Structure(symbol);
       }
@@ -67,6 +65,31 @@ export class ProgrammingConstruct {
         return new ProgrammingConstruct(symbol);
       }
     }
+  }
+}
+
+/** Описание элемента структуры. */
+class Property extends ProgrammingConstruct {
+  /** Имя предка. */
+  protected parent?: string;
+
+  /**
+   * Признак, что переданный для сравнения элемент равен текущему.
+   * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
+   */
+  protected isDetailEqual(element: IElementDetail): boolean {
+    return (
+      element.container.kind === vscode.SymbolKind.Property &&
+      this.parent!.startsWith('I') &&
+      this.parent!.substring(1) === element.parent &&
+      element.container.detail === this.detail
+    );
+  }
+
+  constructor(symbol: IElementDetail) {
+    super(symbol);
+    this.parent = symbol.parent;
   }
 }
 
@@ -118,20 +141,10 @@ class Structure extends ProgrammingConstruct {
    * @returns true - если элемент равен текущему, иначе false.
    */
   protected isDetailEqual(element: IElementDetail): boolean {
-    switch (element.container.kind) {
-      case vscode.SymbolKind.Class: {
-        return element.container.detail === this.getStructureWithoutPrefix();
-      }
-      case vscode.SymbolKind.Property: {
-        return (
-          (element.parent === this.parent || this.parent!.search(`^I${element.parent}$`) > -1) &&
-          element.container.detail === this.detail
-        );
-      }
-      default: {
-        return super.isDetailEqual(element);
-      }
-    }
+    return (
+      element.container.kind === vscode.SymbolKind.Class &&
+      element.container.detail === this.getStructureWithoutPrefix()
+    );
   }
 
   constructor(symbol: IElementDetail) {
