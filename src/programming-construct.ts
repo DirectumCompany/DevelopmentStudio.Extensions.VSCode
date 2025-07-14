@@ -94,7 +94,7 @@ class Structure extends ProgrammingConstruct {
    * @returns Детальное описание структуры без префикса "I".
    * @description Используется для структур.
    * Пример того, что подается на вход: 'Sungero.Commons.Structures.Module.IArioFact'.
-   * На выходе должно полчиться: 'Sungero.Commons.Structures.Module.ArioFact'.
+   * На выходе должно получиться: 'Sungero.Commons.Structures.Module.ArioFact'.
    */
   private getStructureWitoutPrefix(): string {
     if (!this.structureWithoutPrefix) {
@@ -104,9 +104,9 @@ class Structure extends ProgrammingConstruct {
   }
 
   /**
-   * Проверить равеноство по именам.
+   * Проверить равенство по именам.
    * @param element Элемент для сравнения.
-   * @returns true - если элемент равен текщуему, иначе false.
+   * @returns true - если элемент равен текущему, иначе false.
    */
   protected isNameEqual(element: IElementDetail): boolean {
     return this.searchNames.includes(element.container.name);
