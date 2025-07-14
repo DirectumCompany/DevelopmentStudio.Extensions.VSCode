@@ -154,7 +154,7 @@ class Function extends ProgrammingConstruct {
   private getFunctionWithoutFirstParam(): string {
     if (!this.functionWithoutFirstParam) {
       let definition = this.detail;
-      definition = definition.replace(/(\()([\w.<>]+)\s(\w+)(,)?\s*/, '$1');
+      definition = definition.replace(/(\()([\w.<>]+)\s+(\w+)(,)?\s*/, '$1');
       this.functionWithoutFirstParam = definition.toString();
     }
     return this.functionWithoutFirstParam;
