@@ -166,7 +166,6 @@ class Function extends ProgrammingConstruct {
    * @returns true - если переданное детальное описание, без учета параметров по умолчанию
    * равно текущему детальному описанию, иначе false.
    */
-  // TODO: не очень хорошее сравнение, надо бы сравнивать отдельно по именам параметров и их типам.
   private getWithoutDefaultParams(detail: string): string {
     const result: string[] = [];
     let params = detail.substring(detail.indexOf('(') + 1, detail.lastIndexOf(')'));
