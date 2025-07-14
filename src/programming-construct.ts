@@ -188,7 +188,10 @@ class Function extends ProgrammingConstruct {
    */
   private getFunctionDetailForCompare(element: IElementDetail): string {
     // Если функция изолированная, функция модуля или статическая, то первый параметр должен остаться.
-    if (['IsolatedFunctions', 'ModuleFunctions'].includes(element.parent) || this.isStatic(element.textLine!)) {
+    if (
+      ['IsolatedFunctions', 'ModuleFunctions', 'ModuleInitializer'].includes(element.parent) ||
+      this.isStatic(element.textLine!)
+    ) {
       return this.detail;
     }
     return this.getFunctionWithoutFirstParam();
