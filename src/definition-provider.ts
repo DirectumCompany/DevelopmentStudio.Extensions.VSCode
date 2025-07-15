@@ -4,20 +4,17 @@ import { DocumentSymbolLoader } from './symbol-loader';
 import { SymbolSearcher } from './symbol-searcher';
 
 /** Дополнительный поставщик определений. */
-// FIXME: переименовать в AdditionalDefinitionProvider
-export class AdditionalDefinitionProvaider implements vscode.DefinitionProvider {
+export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
   /**
    *  Вернуть дополнительные определения.
    *  @param document Документ, в котором была вызвана команда.
    *  @param position Позиция, в которой была вызвана команда.
+   *  @returns Определение символа, представляемого в виде одного или нескольких {@link vscode.Location местоположений}.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: что-то по-моему типы не совпадают? Указано, что возвращается vscode.Definition, а судя по коду vscode.Definition[].
-  // TODO: не указана область видимости метода.
-  async getAdditionalDefinitions(
+  private async getAdditionalDefinitions(
     document: vscode.TextDocument,
     position: vscode.Position,
-  ): Promise<vscode.Definition | null> {
+  ): Promise<vscode.Definition> {
     let modifiedDefinitions = [];
 
     const currentDefinitions = await VSCodeApi.getDefinitions(document.uri, position);
@@ -44,10 +41,16 @@ export class AdditionalDefinitionProvaider implements vscode.DefinitionProvider 
   /** Признак, что идет работа над поиском определения. */
   private lock: boolean = false;
 
-  // FIXME: нет документирующего комментария
-  // TODO: не указана область видимости метода.
-  // FIXME: что-то по-моему типы не совпадают? Указано, что возвращается vscode.Definition, а судя по коду vscode.Definition[].
-  async provideDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Definition | null> {
+  /**
+   * Предоставить определение символа в заданной позиции документа.
+   * @param document Документ, в котором была вызвана команда.
+   * @param position Позиция, в которой была вызвана команда.
+   * @returns Определение символа, представляемого в виде одного или нескольких {@link vscode.Location местоположений}.
+   */
+  public async provideDefinition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+  ): Promise<vscode.Definition | null> {
     if (this.lock) {
       return Promise.resolve(null);
     }

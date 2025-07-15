@@ -12,9 +12,6 @@ export class ProgrammingConstruct {
   /** Детальное описание. */
   public detail: string;
 
-  /** Имя предка. */
-  protected parent?: string;
-
   /** Проверить равенство по именам. */
   protected isNameEqual(element: IElementDetail): boolean {
     return this.name === element.container.name;
@@ -23,10 +20,9 @@ export class ProgrammingConstruct {
   /**
    * Признак, что детальная информация переданного для сравнения элемента равна текущей детальной информации.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: переименовать в isDetailEqual
-  protected isDeatilEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: IElementDetail): boolean {
     // Сравнение для всех остальных.
     return element.container.detail === this.detail;
   }
@@ -39,32 +35,29 @@ export class ProgrammingConstruct {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
-    this.parent = symbol.parent;
   }
 
   /** Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public IsEqual(element: IElementDetail): boolean {
-    // TODO: схлопнуть условие return this.isNameEqual(element) && this.isDetailEqual(element)
-    if (this.isNameEqual(element)) {
-      return this.isDeatilEqual(element);
-    }
-    return false;
+    return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
   /**
    * Создать объект в зависимости от его типа.
    * @param symbol Описание.
+   * @returns Возвращается созданный в зависимости от описания объект.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public static Create(symbol: IElementDetail): ProgrammingConstruct {
     switch (symbol.container.kind) {
       case vscode.SymbolKind.Method: {
         return new Function(symbol);
       }
-      case vscode.SymbolKind.Property:
+      case vscode.SymbolKind.Property: {
+        return new Property(symbol);
+      }
       case vscode.SymbolKind.Interface: {
         return new Structure(symbol);
       }
@@ -75,14 +68,38 @@ export class ProgrammingConstruct {
   }
 }
 
+/** Описание элемента структуры. */
+class Property extends ProgrammingConstruct {
+  /** Имя предка. */
+  protected parent?: string;
+
+  /**
+   * Признак, что переданный для сравнения элемент равен текущему.
+   * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
+   */
+  protected isDetailEqual(element: IElementDetail): boolean {
+    return (
+      element.container.kind === vscode.SymbolKind.Property &&
+      this.parent!.startsWith('I') &&
+      this.parent!.substring(1) === element.parent &&
+      element.container.detail === this.detail
+    );
+  }
+
+  constructor(symbol: IElementDetail) {
+    super(symbol);
+    this.parent = symbol.parent;
+  }
+}
+
 /** Описание структуры. */
 class Structure extends ProgrammingConstruct {
   /** Имена для поиска. */
   private searchNames: string[] = [];
 
   /** Детальное описание структуры без префикса. */
-  // FIXME: переименовать в structureWithoutPrefix
-  private structureWitoutPrefix?: string;
+  private structureWithoutPrefix?: string;
 
   /**
    * Добавить токены для поиска.
@@ -97,22 +114,23 @@ class Structure extends ProgrammingConstruct {
 
   /**
    * Вернуть детальное описание без префикса.
+   * @returns Детальное описание структуры без префикса "I".
    * @description Используется для структур.
+   * Пример того, что подается на вход: 'Sungero.Commons.Structures.Module.IArioFact'.
+   * На выходе должно получиться: 'Sungero.Commons.Structures.Module.ArioFact'.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // TODO: не указан возвращаемый тип.
-  private getStructureWitoutPrefix() {
-    if (!this.structureWitoutPrefix) {
-      // TODO: не совсем понятно, что делает регэксп. Есть подозрение, что он
-      // может быть неправильным. Хотелось бы получить пример того, что на него
-      // подаётся и что должно получиться в результате.
-      this.structureWitoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
+  private getStructureWithoutPrefix(): string {
+    if (!this.structureWithoutPrefix) {
+      this.structureWithoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
     }
-    return this.structureWitoutPrefix;
+    return this.structureWithoutPrefix;
   }
 
-  /** Проверить равеноство по именам. */
-  // TODO: в документирующем комментарии не указано, что возвращается.
+  /**
+   * Проверить равенство по именам.
+   * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
+   */
   protected isNameEqual(element: IElementDetail): boolean {
     return this.searchNames.includes(element.container.name);
   }
@@ -120,27 +138,13 @@ class Structure extends ProgrammingConstruct {
   /**
    * Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: переименовать в isDetailEqual
-  protected isDeatilEqual(element: IElementDetail): boolean {
-    // TODO: комментарий совсем непонятный. Сделай два комментария к кейсам.
-    // Сравнение для структур: при объявлении в обертке - интерфейс,
-    // при объявлении в структурах на прикладной - класс.
-    switch (element.container.kind) {
-      case vscode.SymbolKind.Class: {
-        return element.container.detail === this.getStructureWitoutPrefix();
-      }
-      case vscode.SymbolKind.Property: {
-        return (
-          (element.parent === this.parent || this.parent!.search(`^I${element.parent}$`) > -1) &&
-          element.container.detail === this.detail
-        );
-      }
-      default: {
-        return super.isDeatilEqual(element);
-      }
-    }
+  protected isDetailEqual(element: IElementDetail): boolean {
+    return (
+      element.container.kind === vscode.SymbolKind.Class &&
+      element.container.detail === this.getStructureWithoutPrefix()
+    );
   }
 
   constructor(symbol: IElementDetail) {
@@ -154,16 +158,16 @@ class Function extends ProgrammingConstruct {
   /** Детальное описание функции без первого параметра. */
   private functionWithoutFirstParam?: string;
 
-  /** Вернуть описание функции без первого параметра. */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // TODO: не указан возвращаемый тип.
-  private getFunctionWithoutFirstParam() {
+  /**
+   * Вернуть описание функции без первого параметра.
+   * @returns Описание функции без первого параметра.
+   * @description На вход поступает: 'GetExtensionValidationError(IOfficialDocument officialDocument, String extension)'.
+   * На выходе ожидаем: 'GetExtensionValidationError(String extension)'.
+   */
+  private getFunctionWithoutFirstParam(): string {
     if (!this.functionWithoutFirstParam) {
-      // TODO: непонятно, что это извлекается. И что будет, если после первой открытой скобки попадётся точка.
-      let definition = this.detail.substring(this.detail.lastIndexOf('.', this.detail.indexOf('(')) + 1);
-      definition = definition.substring(0, definition.indexOf(')') + 1);
-      definition = definition.replace(/(\()([\w.<>]+)\s(\w+)(,)?\s*/, '$1');
-      // TODO: хотелось бы комментарий с примерами. Не могу мысленно представить, что здесь делается.
+      let definition = this.detail;
+      definition = definition.replace(/(\()([\w.<>]+)\s+(\w+)(,)?\s*/, '$1');
       this.functionWithoutFirstParam = definition.toString();
     }
     return this.functionWithoutFirstParam;
@@ -175,47 +179,43 @@ class Function extends ProgrammingConstruct {
    * @returns true - если переданное детальное описание, без учета параметров по умолчанию
    * равно текущему детальному описанию, иначе false.
    */
-  // TODO: не указан возвращаемый тип.
-  private getWithoutDefaultParams(detail: string) {
+  private getWithoutDefaultParams(detail: string): string {
     const result: string[] = [];
     let params = detail.substring(detail.indexOf('(') + 1, detail.lastIndexOf(')'));
-    // TODO: на trimEnd() плейграунд ругается. Если в объявлении параметров есть
-    // пробелы после запятой, то будет ещё неубранный пробел перед параметром.
     params.split(',').forEach((s) => result.push(s.split('=')[0].trimEnd()));
     return detail.replace(params, result.join(','));
   }
 
   /** Признак, что функция статическая.
    * @param textLine Строка описания.
+   * @returns true - если функция статическая, иначе - false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // TODO: не указан возвращаемый тип.
-  private isStatic(textLine: string) {
+  private isStatic(textLine: string): boolean {
     return textLine?.split(/\s/).includes('static');
   }
 
   /**
    * Вернуть описание функции для сравнения.
    * @param element Элемент для сравнения.
+   * @returns Описание функции для сравнения.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   private getFunctionDetailForCompare(element: IElementDetail): string {
     // Если функция изолированная, функция модуля или статическая, то первый параметр должен остаться.
-    if (['IsolatedFunctions', 'ModuleFunctions'].includes(element.parent) || this.isStatic(element.textLine!)) {
+    if (
+      ['IsolatedFunctions', 'ModuleFunctions', 'ModuleInitializer'].includes(element.parent) ||
+      this.isStatic(element.textLine!)
+    ) {
       return this.detail;
-    // FIXME: else не нужен.
-    } else {
-      return this.getFunctionWithoutFirstParam();
     }
+    return this.getFunctionWithoutFirstParam();
   }
 
   /**
    * Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
+   * @returns true - если элемент равен текущему, иначе false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
-  // FIXME: переименовать в isDetailEqual
-  protected isDeatilEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: IElementDetail): boolean {
     // Сравнение для функций
     if (element.container.kind === vscode.SymbolKind.Method) {
       const functionDetail = this.getFunctionDetailForCompare(element);
@@ -224,6 +224,6 @@ class Function extends ProgrammingConstruct {
         this.getWithoutDefaultParams(element.container.detail) === functionDetail
       );
     }
-    return super.isDeatilEqual(element);
+    return super.isDetailEqual(element);
   }
 }

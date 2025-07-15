@@ -23,8 +23,8 @@ export abstract class SymbolSearcher {
   /**
    * Признак, что контейнер подходит под условия.
    * @param container Контейнер.
+   * @returns true - если контейнер подходит под условия, иначе - false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   protected abstract needGetSymbol(container: vscode.DocumentSymbol): Promise<boolean>;
 
   /**
@@ -55,18 +55,17 @@ export abstract class SymbolSearcher {
   }
 
   /**
-   * Вернуть описание.
+   * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем.
+   * @returns Массив с детальными описаниями.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public async localGetSymbols(documentUri: vscode.Uri): Promise<IElementDetail[]> {
-    // TODO: что-то мне any[] не нравится. Мы вроде возвращаем IElementDetail[]?
-    let result: any[] = [];
+    let result: IElementDetail[] = [];
 
     this.documentUri = documentUri;
     const symbols = await VSCodeApi.getSymbols(this.documentUri);
 
-    if (symbols.length) {
+    if (symbols.length > 0) {
       for (const symbol of symbols) {
         this.parent = symbol.name;
 
@@ -75,7 +74,7 @@ export abstract class SymbolSearcher {
           result.push(
             ...findResult.map((element) => ({
               container: element,
-              parent: this.parent,
+              parent: this.parent!,
             })),
           );
         }
@@ -89,38 +88,34 @@ export abstract class SymbolSearcher {
   }
 
   /**
-   * Вернуть описание.
+   * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
    * @param wrapperDescription Определение из обертки, на основе котрого ищем описание.
+   * @returns Массив с детальными описаниями.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public static async getSymbols(
     documentUri: vscode.Uri,
     wrapperDescription: ProgrammingConstruct,
   ): Promise<IElementDetail[]>;
-  // TODO: а тело метода куда делось?
-
   /**
-   * Вернуть описание.
+   * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
    * @param tokens Токены поиска.
    * @param range Диапазон поиска.
+   * @returns Массив с детальными описаниями.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public static async getSymbols(
     documentUri: vscode.Uri,
     tokens: string,
     range: vscode.Range,
   ): Promise<IElementDetail[]>;
-  // TODO: а тело метода куда делось?
-
   /**
-   * Вернуть описание.
+   * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
    * @param wrapperDescriptionOrToken Определение из обертки или токены поиска, на основе которых ищем описание.
    * @param range Диапазон поиска.
+   * @returns Массив с детальными описаниями.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   public static async getSymbols(
     documentUri: vscode.Uri,
     wrapperDescriptionOrToken: ProgrammingConstruct | string,
@@ -149,8 +144,8 @@ class SymbolSearcherByTokenAndRange extends SymbolSearcher {
   /**
    * Признак, что контейнер подходит под условия при сравнении с переданными токенами.
    * @param container Контейнер.
+   * @returns true - если контейнер подходит под условия, иначе - false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   protected async needGetSymbol(container: vscode.DocumentSymbol): Promise<boolean> {
     if (this.token === container.name) {
       const location = container.selectionRange;
@@ -182,20 +177,20 @@ class SymbolSearcherByWrapperDescription extends SymbolSearcher {
 
   /** Вернуть строку по позиции.
    * @param position Позиция.
+   * @returns Строка по переданной позиции.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   private async getTextLine(position: vscode.Position): Promise<string> {
-    if (!this.textLines.length) {
+    if (this.textLines.length === 0) {
       this.textLines = await VSCodeApi.loadDocumentLine(this.documentUri!);
     }
     return Promise.resolve(this.textLines[position.line]);
   }
 
   /**
-   * Признак, что контейнер подходит под условия при сравнении определением из обертки.
+   * Признак, что контейнер подходит под условия при сравнении с определением из обертки.
    * @param container Контейнер.
+   * @returns true - если контейнер подходит под условия, иначе - false.
    */
-  // TODO: в документирующем комментарии не указано, что возвращается.
   protected async needGetSymbol(container: vscode.DocumentSymbol): Promise<boolean> {
     const textLine = await this.getTextLine(container.selectionRange.start);
     return Promise.resolve(
