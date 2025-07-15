@@ -25,7 +25,7 @@ export class DocumentSymbolLoader {
    * @returns Возвращает Uri на файл с описанием определения или null.
    */
   private async getUriFromHrefComment(): Promise<vscode.Uri | null> {
-    const regexHref = /\/\/\/\s*<see href="([^"]*)"\s*\/>/;
+    const regexHref = /\/\/\/\s*<see href="([^"]*)" internal="" \/>/;
     for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
       const line = this.documentLines[lineNumber];
       const match = line.match(regexHref);
