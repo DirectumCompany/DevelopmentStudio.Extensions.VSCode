@@ -26,7 +26,7 @@ export const loadDocumentLine = async (uri: vscode.Uri) => {
 };
 
 /**
- * Открыть укзанный Uri с позиционированием на @see href=vscode.DocumentSymbol
+ * Открыть укзанный Uri с позиционированием на {@link vscode.DocumentSymbol}.
  * @param documentUri Uri документа.
  * @param documentSymbol Программная конструкция.
  */
