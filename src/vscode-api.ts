@@ -24,3 +24,17 @@ export const loadDocumentLine = async (uri: vscode.Uri) => {
   const dtsDocument = (await vscode.workspace.fs.readFile(uri)).toString();
   return dtsDocument.split('\n');
 };
+
+/**
+ * Открыть укзанный Uri с позиционированием на {@link vscode.DocumentSymbol}.
+ * @param documentUri Uri документа.
+ * @param documentSymbol Программная конструкция.
+ */
+export const gotoDefinition = async (documentUri: vscode.Uri, documentSymbol: vscode.DocumentSymbol) => {
+  return vscode.commands.executeCommand(
+    'vscode.open',
+    documentUri.with({
+      fragment: `L${documentSymbol.selectionRange.start.line + 1},${documentSymbol.selectionRange.start.character + 1}`,
+    }),
+  );
+};

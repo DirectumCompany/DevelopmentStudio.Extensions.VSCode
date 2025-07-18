@@ -15,7 +15,7 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
     document: vscode.TextDocument,
     position: vscode.Position,
   ): Promise<vscode.Definition> {
-    let modifiedDefinitions = [];
+    let modifiedDefinitions: vscode.Location[] = [];
 
     const currentDefinitions = await VSCodeApi.getDefinitions(document.uri, position);
 
@@ -28,11 +28,19 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
           symbolLoader.documentSymbol!,
         );
 
-        modifiedDefinitions.unshift(
-          ...originalSymbols.map(
-            (symbol) => new vscode.Location(symbolLoader.originalUri!, symbol.container.selectionRange),
-          ),
-        );
+        if (originalSymbols.length > 0) {
+          const needOpenDefinition = originalSymbols.length === 1;
+          if (needOpenDefinition) {
+            await VSCodeApi.gotoDefinition(symbolLoader.originalUri!, originalSymbols[0].container);
+          } else {
+            modifiedDefinitions.unshift(
+              ...originalSymbols.map(
+                (symbol) => new vscode.Location(symbolLoader.originalUri!, symbol.container.selectionRange),
+              ),
+            );
+          }
+        }
+
       }
     }
     return Promise.resolve(modifiedDefinitions);

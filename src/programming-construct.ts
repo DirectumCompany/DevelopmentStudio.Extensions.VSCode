@@ -68,7 +68,7 @@ export class ProgrammingConstruct {
   }
 }
 
-/** Описание элемента структуры. */
+/** Описание элемента структуры или константы. */
 class Property extends ProgrammingConstruct {
   /** Имя предка. */
   protected parent?: string;
@@ -79,12 +79,18 @@ class Property extends ProgrammingConstruct {
    * @returns true - если элемент равен текущему, иначе false.
    */
   protected isDetailEqual(element: IElementDetail): boolean {
-    return (
-      element.container.kind === vscode.SymbolKind.Property &&
-      this.parent!.startsWith('I') &&
-      this.parent!.substring(1) === element.parent &&
-      element.container.detail === this.detail
-    );
+    switch (element.container.kind) {
+      case vscode.SymbolKind.Property: {
+        return (
+          this.parent!.startsWith('I') &&
+          this.parent!.substring(1) === element.parent &&
+          element.container.detail === this.detail
+        );
+      }
+      default: {
+        return this.parent! === element.parent && super.isDetailEqual(element);
+      }
+    }
   }
 
   constructor(symbol: IElementDetail) {
