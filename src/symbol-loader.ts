@@ -21,16 +21,16 @@ export class DocumentSymbolLoader {
   public documentSymbol?: ProgrammingConstruct | null;
 
   /**
-   * Вернуть ссылку на документ из href-комментария.
-   * @returns Возвращает Uri на файл с описанием определения или null.
+   * Вернуть ссылку на документ и признак инъекции из комментария.
+   * @returns Возвращает Uri на файл с описанием определения и признак инъекции или null.
    */
-  private async getUriFromHrefComment(): Promise<vscode.Uri | null> {
-    const regexHref = /\/\/\/\s*<see href="([^"]*)" internal="" \/>/;
+  private async getInfoFromComment(): Promise<{ uri: vscode.Uri; isInjection: boolean } | null> {
+    const regexHref = /\/\/\/\s*<see href="([^"]*)" internal=""( proxy="")? \/>/;
     for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
       const line = this.documentLines[lineNumber];
       const match = line.match(regexHref);
       if (match) {
-        return Promise.resolve(vscode.Uri.parse(match[1].toString()));
+        return Promise.resolve({ uri: vscode.Uri.parse(match[1].toString()), isInjection: match[2]?.length > 0 });
       }
     }
     return Promise.resolve(null);
@@ -46,13 +46,16 @@ export class DocumentSymbolLoader {
 
   /**
    * Вернуть определение из обертки.
+   * @param isInjection Признак, что определение - инъекция.
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
    */
-  private async getWrapperDocumentSymbol(): Promise<ProgrammingConstruct | null> {
+  private async getWrapperDocumentSymbol(isInjection: boolean): Promise<ProgrammingConstruct | null> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
-    if (symbolWrapper.length > 0) {
-      return Promise.resolve(ProgrammingConstruct.Create(symbolWrapper[0]));
+    const firstElementDetail = symbolWrapper.shift();
+    if (firstElementDetail) {
+      firstElementDetail.isInjection = isInjection;
+      return Promise.resolve(ProgrammingConstruct.Create(firstElementDetail));
     }
     return Promise.resolve(null);
   }
@@ -64,9 +67,10 @@ export class DocumentSymbolLoader {
   public async tryLoadDocumentSymbols(): Promise<boolean> {
     if (this.needLoadDocumentSymbol()) {
       this.documentLines = await VSCodeApi.loadDocumentLine(this.uri);
-      this.originalUri = await this.getUriFromHrefComment();
-      if (this.originalUri) {
-        this.documentSymbol = await this.getWrapperDocumentSymbol();
+      const infoFromComment = await this.getInfoFromComment();
+      if (infoFromComment) {
+        this.originalUri = infoFromComment.uri;
+        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment.isInjection);
         if (this.documentSymbol) {
           return Promise.resolve(true);
         }
