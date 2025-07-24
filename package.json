@@ -1,7 +1,7 @@
 {
-  "name": "gotodefinition",
-  "displayName": "GoToDefinition",
-  "description": "",
+  "name": "development-studio-vscode-extension",
+  "displayName": "development-studio-vscode-extension",
+  "description": "Development Studio Extension for VS Code",
   "version": "0.0.1",
   "publisher": "sungero",
   "engines": {
@@ -10,10 +10,12 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
-    "configuration":{
+    "configuration": {
       "type": "object",
       "title": "GoToDefinition"
     }
@@ -35,3 +37,5 @@
     "typescript": "5.4.5"
   }
 }
+
+
