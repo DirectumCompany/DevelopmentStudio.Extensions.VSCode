@@ -164,6 +164,9 @@ class Function extends ProgrammingConstruct {
   /** Детальное описание функции без первого параметра. */
   private functionWithoutFirstParam?: string;
 
+  /** Признак, что описание функции из инъекции. */
+  private isInjection?: boolean;
+
   /**
    * Вернуть описание функции без первого параметра.
    * @returns Описание функции без первого параметра.
@@ -206,8 +209,9 @@ class Function extends ProgrammingConstruct {
    * @returns Описание функции для сравнения.
    */
   private getFunctionDetailForCompare(element: IElementDetail): string {
-    // Если функция изолированная, функция модуля или статическая, то первый параметр должен остаться.
+    // Если функция инъекции, изолированная, функция модуля, инициализации или статическая, то первый параметр должен остаться.
     if (
+      this.isInjection ||
       ['IsolatedFunctions', 'ModuleFunctions', 'ModuleInitializer'].includes(element.parent) ||
       this.isStatic(element.textLine!)
     ) {
@@ -231,5 +235,10 @@ class Function extends ProgrammingConstruct {
       );
     }
     return super.isDetailEqual(element);
+  }
+
+  constructor(symbol: IElementDetail) {
+    super(symbol);
+    this.isInjection = symbol.isInjection;
   }
 }

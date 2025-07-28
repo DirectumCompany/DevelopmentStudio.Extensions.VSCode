@@ -7,6 +7,7 @@ export interface IElementDetail {
   container: vscode.DocumentSymbol;
   parent: string;
   textLine?: string;
+  isInjection?: boolean;
 }
 
 /** Поисковик описания. */
