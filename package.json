@@ -29,10 +29,14 @@
     "lint": "eslint src",
     "test": "vscode-test"
   },
+  "extensionDependencies": [
+    "ms-dotnettools.csdevkit"
+  ],
   "devDependencies": {
     "@eslint/js": "9.19.0",
     "@types/node": "20.x",
     "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.6.0",
     "eslint": "9.19.0",
     "ts-loader": "^9.5.2",
     "typescript": "5.4.5",
@@ -41,8 +45,4 @@
     "webpack-cli": "^6.0.1"
   }
 }
-
-
-
-
 
