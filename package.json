@@ -24,14 +24,11 @@
     "vscode:prepublish": "npm run package",
     "package": "webpack --mode production --devtool hidden-source-map",
     "compile": "webpack --mode development",
-    "watch": "webpack --mode development --watch",
+    "watch": "npm run compile && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test"
   },
-  "extensionDependencies": [
-    "ms-dotnettools.csdevkit"
-  ],
   "devDependencies": {
     "@eslint/js": "9.19.0",
     "@types/node": "20.x",
@@ -45,4 +42,5 @@
     "webpack-cli": "^6.0.1"
   }
 }
+
 
