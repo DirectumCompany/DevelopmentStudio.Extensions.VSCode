@@ -25,12 +25,12 @@ export class DocumentSymbolLoader {
    * @returns Возвращает Uri на файл с описанием определения и признак инъекции или null.
    */
   private async getInfoFromComment(): Promise<{ uri: vscode.Uri; isInjection: boolean } | null> {
-    const regexHref = /\/\/\/\s*<see href="([^"]*)" internal=""( proxy="")? \/>/;
+    const regexHref = /\/\/\/\s*<see href="file:\/\/\/([^"]*)" internal=""( proxy="")? \/>/;
     for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
       const line = this.documentLines[lineNumber];
       const match = line.match(regexHref);
       if (match) {
-        return Promise.resolve({ uri: vscode.Uri.parse(match[1].toString()), isInjection: match[2]?.length > 0 });
+        return Promise.resolve({ uri: vscode.Uri.file(match[1].toString()), isInjection: match[2]?.length > 0 });
       }
     }
     return Promise.resolve(null);
