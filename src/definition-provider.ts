@@ -27,20 +27,11 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
           symbolLoader.originalUri!,
           symbolLoader.documentSymbol!,
         );
-
-        if (originalSymbols.length > 0) {
-          const needOpenDefinition = originalSymbols.length === 1;
-          if (needOpenDefinition) {
-            await VSCodeApi.gotoDefinition(symbolLoader.originalUri!, originalSymbols[0].container);
-          } else {
-            modifiedDefinitions.unshift(
-              ...originalSymbols.map(
-                (symbol) => new vscode.Location(symbolLoader.originalUri!, symbol.container.selectionRange),
-              ),
-            );
-          }
-        }
-
+        modifiedDefinitions.unshift(
+          ...originalSymbols.map(
+            (symbol) => new vscode.Location(symbolLoader.originalUri!, symbol.container.selectionRange),
+          ),
+        );
       }
     }
     return Promise.resolve(modifiedDefinitions);
