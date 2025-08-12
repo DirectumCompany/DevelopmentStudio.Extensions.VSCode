@@ -16,9 +16,31 @@
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
-      "type": "object",
-      "title": "GoToDefinition"
-    }
+      "order": 0,
+      "title": "Sungero",
+      "properties": {
+        "sungero.enableAdditionalDefinitionProvider": {
+          "type": "boolean",
+          "description": "Enable additional DefinitionProvider (requires restart).",
+          "order": 0,
+          "default": false
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "development-studio-vscode-extension.GoToOriginalDefinition",
+        "title": "Go to Definition",
+        "category": "Sungero"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "development-studio-vscode-extension.GoToOriginalDefinition",
+        "key": "Ctrl+Enter",
+        "when": "(editorLangId == csharp) && editorHasDefinitionProvider && editorTextFocus"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
