@@ -30,11 +30,25 @@ export const loadDocumentLine = async (uri: vscode.Uri) => {
  * @param documentUri Uri документа.
  * @param documentSymbol Программная конструкция.
  */
-export const gotoDefinition = async (documentUri: vscode.Uri, documentSymbol: vscode.DocumentSymbol) => {
+export const gotoDefinition = async (documentUri: vscode.Uri, range: vscode.Range) => {
   return vscode.commands.executeCommand(
     'vscode.open',
     documentUri.with({
-      fragment: `L${documentSymbol.selectionRange.start.line + 1},${documentSymbol.selectionRange.start.character + 1}`,
+      fragment: `L${range.start.line + 1},${range.start.character + 1}`,
     }),
   );
+};
+
+/**
+ * Показать ссылки.
+ * @param documentUri Uri документа, где была вызвана команда.
+ * @param position Позиция, где была вызвана команад.
+ * @param originalSymbols Определения, которые нужно показать.
+ */
+export const showReferences = async (
+  documentUri: vscode.Uri,
+  position: vscode.Position,
+  originalSymbols: vscode.Location[],
+) => {
+  return vscode.commands.executeCommand('editor.action.showReferences', documentUri, position, originalSymbols);
 };
