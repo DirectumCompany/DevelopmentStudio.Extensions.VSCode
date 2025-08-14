@@ -15,12 +15,6 @@
     "onLanguage:csharp"
   ],
   "main": "./dist/extension.js",
-  "contributes": {
-    "configuration": {
-      "type": "object",
-      "title": "GoToDefinition"
-    }
-  },
   "extensionDependencies": [
     "ms-dotnettools.csharp"
   ],
