@@ -11,37 +11,13 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "workspaceContains:**/*.csproj",
+    "onLanguage:csharp"
   ],
   "main": "./dist/extension.js",
-  "contributes": {
-    "configuration": {
-      "order": 0,
-      "title": "Sungero",
-      "properties": {
-        "sungero.enableAdditionalDefinitionProvider": {
-          "type": "boolean",
-          "description": "Enable additional DefinitionProvider (requires restart).",
-          "order": 0,
-          "default": false
-        }
-      }
-    },
-    "commands": [
-      {
-        "command": "development-studio-vscode-extension.GoToOriginalDefinition",
-        "title": "Go to Definition",
-        "category": "Sungero"
-      }
-    ],
-    "keybindings": [
-      {
-        "command": "development-studio-vscode-extension.GoToOriginalDefinition",
-        "key": "Ctrl+Enter",
-        "when": "(editorLangId == csharp) && editorHasDefinitionProvider && editorTextFocus"
-      }
-    ]
-  },
+  "extensionDependencies": [
+    "ms-dotnettools.csharp"
+  ],
   "scripts": {
     "vscode:prepublish": "npm run package",
     "package": "webpack --mode production --devtool hidden-source-map",
