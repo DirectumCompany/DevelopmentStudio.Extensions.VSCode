@@ -176,7 +176,7 @@ class SymbolSearcherByWrapperDescription extends SymbolSearcher {
    */
   private async getTextLine(position: vscode.Position): Promise<string> {
     if (this.textLines.length === 0) {
-      this.textLines = await VSCodeApi.loadDocumentLine(this.documentUri!);
+      this.textLines = await VSCodeApi.loadDocumentLines(this.documentUri!);
     }
     return Promise.resolve(this.textLines[position.line]);
   }

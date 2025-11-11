@@ -20,12 +20,11 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
     const currentDefinitions = await VSCodeApi.getDefinitions(document.uri, position);
 
     for (const definition of currentDefinitions) {
-      const symbolLoader = new DocumentSymbolLoader(definition);
-
-      if (await symbolLoader.tryLoadDocumentSymbols()) {
+      const wrapperProgrammingConstruct = await DocumentSymbolLoader.loadWrapperProgrammingConstruct(definition);
+      if (wrapperProgrammingConstruct) {
         const originalSymbols = await SymbolSearcher.getSymbols(
-          symbolLoader.documentSymbol?.uriFromComment!,
-          symbolLoader.documentSymbol!,
+          wrapperProgrammingConstruct.uriFromComment!,
+          wrapperProgrammingConstruct,
         );
         modifiedDefinitions.unshift(
           ...originalSymbols.map((symbol) => new vscode.Location(symbol.uri, symbol.container.selectionRange)),

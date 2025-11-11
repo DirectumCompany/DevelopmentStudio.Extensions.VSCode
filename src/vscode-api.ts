@@ -20,7 +20,7 @@ export const getSymbols = async (documentUri: vscode.Uri) => {
 /** Загрузить массив строк из документа.
  * @param documentUri Uri документа, откуда надо загрузить строки.
  */
-export const loadDocumentLine = async (uri: vscode.Uri) => {
+export const loadDocumentLines = async (uri: vscode.Uri) => {
   const dtsDocument = (await vscode.workspace.fs.readFile(uri)).toString();
   return dtsDocument.split('\n');
 };

@@ -15,9 +15,6 @@ export class DocumentSymbolLoader {
   /** Массив строк документа. */
   private documentLines: string[];
 
-  /** Описание из враппера. */
-  public documentSymbol?: ProgrammingConstruct | null;
-
   /**
    * Вернуть ссылку на документ и признак инъекции из комментария.
    * @returns Возвращает Uri на файл с описанием определения или null и признак инъекции.
@@ -58,38 +55,63 @@ export class DocumentSymbolLoader {
   }
 
   /**
-   * Попытаться загрузить определение.
-   * @returns true - если загрузить определение удалось, иначе false.
+   * Загрузить описание.
+   * @returns Загруженное описание или null.
    */
-  public async tryLoadDocumentSymbols(): Promise<boolean> {
-    if (this.needLoadDocumentSymbol()) {
-      this.documentLines = await VSCodeApi.loadDocumentLine(this.uri);
-      const infoFromComment = await this.getInfoFromComment();
-      if (infoFromComment) {
-        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment);
-        if (this.documentSymbol) {
-          return Promise.resolve(true);
-        }
-      }
-    }
-    return Promise.resolve(false);
+  protected async loadDocumentSymbols(): Promise<ProgrammingConstruct | null> {
+    const infoFromComment = await this.getInfoFromComment();
+    const documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment);
+    return Promise.resolve(documentSymbol);
   }
 
-  /**
-   * Проверить, нужно ли загружать конструкцию.
-   * @returns true - если нужно загржуать, иначе false.
-   */
-  private needLoadDocumentSymbol(): boolean {
-    return this.uri.fsPath.endsWith('g.cs');
+  /** Загрузить массив строк из документа. */
+  private async loadDocumentLines() {
+    this.documentLines = await VSCodeApi.loadDocumentLines(this.uri);
   }
 
   /**
    * Конструктор.
    * @param definition Определение.
    */
-  constructor(definition: vscode.Location) {
+  private constructor(definition: vscode.Location) {
     this.range = definition.range;
     this.uri = definition.uri;
     this.documentLines = [];
+  }
+
+  /**
+   * Проверить, нужно ли загружать конструкцию.
+   * @param uri Uri, который надо проверить.
+   * @returns true - если нужно загржуать, иначе false.
+   */
+  private static needLoadDocumentSymbol(uri: vscode.Uri): boolean {
+    return uri.fsPath.endsWith('g.cs');
+  }
+
+  /**
+   * Попытаться создать и инициализировать загрузчик описания из враппера.
+   * @param definition Определение.
+   * @returns Возвращает загрузчик описания из враппера или null.
+   */
+  private static async tryCreate(definition: vscode.Location): Promise<DocumentSymbolLoader | null> {
+    if (DocumentSymbolLoader.needLoadDocumentSymbol(definition.uri)) {
+      const documentSymbolLoader = new DocumentSymbolLoader(definition);
+      await documentSymbolLoader.loadDocumentLines();
+      return Promise.resolve(documentSymbolLoader);
+    }
+    return Promise.resolve(null);
+  }
+
+  /**
+   * Загрузить описание.
+   * @param location {@link vscode.Location Местоположение}, для которого нужно загрузить описание.
+   * @returns Возвращает загрженное описание или null.
+   */
+  public static async loadWrapperProgrammingConstruct(location: vscode.Location): Promise<ProgrammingConstruct | null> {
+    const documentSymbolLoader = await DocumentSymbolLoader.tryCreate(location);
+    if (documentSymbolLoader) {
+      return Promise.resolve(await documentSymbolLoader.loadDocumentSymbols());
+    }
+    return Promise.resolve(null);
   }
 }
