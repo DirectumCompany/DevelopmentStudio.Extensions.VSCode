@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
-import { ElementDetail } from '../types';
+import { ElementDetail, IGetSymbols } from '../types';
 
 /** Поисковик описания. */
-export abstract class SymbolSearcher {
+export abstract class SymbolSearcher implements IGetSymbols {
   /** Имя предка. */
   protected parent?: string;
 
@@ -53,11 +53,7 @@ export abstract class SymbolSearcher {
     return Promise.resolve(tokenFinded || tokenFindedInChilds);
   }
 
-  /**
-   * Вернуть описания.
-   * @returns Массив с детальными описаниями.
-   */
-  public async getSymbols(): Promise<ElementDetail[]> {
+  public async getSymbols(): Promise<ElementDetail | vscode.Location[]> {
     const result: ElementDetail[] = [];
 
     for (const uri of this.documentUri!) {
@@ -84,6 +80,10 @@ export abstract class SymbolSearcher {
         }
       }
     }
-    return Promise.resolve(result);
+    return Promise.resolve(
+      this.needOnlyOneResult
+        ? result.pop()!
+        : result.map((symbol) => new vscode.Location(symbol.uri, symbol.container.selectionRange)),
+    );
   }
 }

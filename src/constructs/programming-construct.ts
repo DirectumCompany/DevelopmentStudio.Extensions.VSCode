@@ -60,7 +60,7 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
     return [uri];
   }
 
-  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<ElementDetail[]> {
+  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
     return await this.getOriginalSymbolByHrefComment(this);
   }
 
@@ -69,10 +69,13 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
    * @param wrapperDescription Определение из обертки, на основе которого ищем описание.
    * @returns Массив с детальными описаниями.
    */
-  public async getOriginalSymbolByHrefComment(wrapperDescription: ProgrammingConstruct): Promise<ElementDetail[]> {
+  public async getOriginalSymbolByHrefComment(wrapperDescription: ProgrammingConstruct): Promise<vscode.Location[]> {
     if (wrapperDescription.uriFromComment) {
       const local = new SymbolSearcherByWrapperDescription(wrapperDescription.uriFromComment, wrapperDescription);
-      return await local.getSymbols();
+      const symbols = await local.getSymbols();
+      if (Array.isArray(symbols)) {
+        return symbols;
+      }
     }
     return Promise.resolve([]);
   }

@@ -14,12 +14,21 @@ export type InfoFromComment = {
   isInjection: boolean;
 };
 
-/** Интерфейс получения оригинального определения. */
+/** Интерфейс получения оригинальных определений. */
 export interface IGetOriginalSymbols {
   /**
-   * Получить оригинальное определение.
+   * Получить оригинальные определения.
    * @param sourceLocation Исходное расположение.
    * @returns Массив оригинальных определений.
    */
-  getOriginalSymbols(sourceLocation: vscode.Location): Promise<ElementDetail[]>;
+  getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]>;
+}
+
+/** Интерфейс получения определений. */
+export interface IGetSymbols {
+  /**
+   * Получить {@link ElementDetail детальное описание элемента} или массив {@link vscode.Location расположений}.
+   * @returns Детальное описание элмента или массив расположений.
+   */
+  getSymbols(): Promise<ElementDetail | vscode.Location[]>;
 }
