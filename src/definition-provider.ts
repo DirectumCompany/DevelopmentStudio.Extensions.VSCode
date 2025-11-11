@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as VSCodeApi from './vscode-api';
 import { DocumentSymbolLoader } from './symbol-loader';
-import { SymbolSearcher } from './symbol-searcher';
+import { SymbolSearcher } from './searchers/symbol-searcher';
 
 /** Дополнительный поставщик определений. */
 export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {

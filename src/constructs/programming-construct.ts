@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IElementDetail } from './symbol-searcher';
+import { IElementDetail } from '../searchers/symbol-searcher';
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct {

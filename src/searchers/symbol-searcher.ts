@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import * as VSCodeApi from "./vscode-api";
-import { ProgrammingConstruct } from './programming-construct';
+import * as vscode from 'vscode';
+import * as VSCodeApi from '../vscode-api';
+import { ProgrammingConstruct } from '../constructs/programming-construct';
 
 /** Детальное описание элемента. */
 export interface IElementDetail {

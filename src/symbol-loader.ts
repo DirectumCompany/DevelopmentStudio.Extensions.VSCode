@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
-import { SymbolSearcher } from './symbol-searcher';
-import { ProgrammingConstruct } from './programming-construct';
+import { SymbolSearcher } from './searchers/symbol-searcher';
+import { ProgrammingConstruct } from './constructs/programming-construct';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
