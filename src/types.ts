@@ -13,3 +13,13 @@ export type InfoFromComment = {
   uri: vscode.Uri | null;
   isInjection: boolean;
 };
+
+/** Интерфейс получения оригинального определения. */
+export interface IGetOriginalSymbols {
+  /**
+   * Получить оригинальное определение.
+   * @param sourceLocation Исходное расположение.
+   * @returns Массив оригинальных определений.
+   */
+  getOriginalSymbols(sourceLocation: vscode.Location): Promise<ElementDetail[]>;
+}

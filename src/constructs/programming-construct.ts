@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { ElementDetail, InfoFromComment } from '../types';
+import { ElementDetail, InfoFromComment, IGetOriginalSymbols } from '../types';
+import { SymbolSearcher } from '../searchers/symbol-searcher';
 
 /** Описание программной конструкции. */
-export class ProgrammingConstruct {
+export class ProgrammingConstruct implements IGetOriginalSymbols {
   /** Вид. */
   protected kind: vscode.SymbolKind;
 
@@ -59,13 +60,17 @@ export class ProgrammingConstruct {
     return [uri];
   }
 
+  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<ElementDetail[]> {
+    return await SymbolSearcher.getOriginalSymbolByHrefComment(this);
+  }
+
   /**
    * Создать объект в зависимости от его типа.
    * @param uriFromComment Uri из href-комментария.
    * @param symbol Описание.
    * @returns Возвращается созданный в зависимости от описания объект.
    */
-  public static Create(uriFromComment: InfoFromComment, symbol: ElementDetail): ProgrammingConstruct {
+  public static Create(uriFromComment: InfoFromComment, symbol: ElementDetail): IGetOriginalSymbols {
     switch (symbol.container.kind) {
       case vscode.SymbolKind.Method: {
         return new Function(uriFromComment, symbol);

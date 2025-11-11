@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher';
 import { ProgrammingConstruct } from './constructs/programming-construct';
-import { InfoFromComment } from './types';
+import { InfoFromComment, IGetOriginalSymbols } from './types';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
@@ -44,7 +44,7 @@ export class DocumentSymbolLoader {
    * @param infoFromComment  {@link InfoFromComment Uri и признак инъекции}, полученные из комментария.
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону или null.
    */
-  private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<ProgrammingConstruct | null> {
+  private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<IGetOriginalSymbols | null> {
     const symbolWrapper = await SymbolSearcher.getSymbolsByToken(this.uri, this.getToken(), this.range);
     const firstElementDetail = symbolWrapper.shift();
     if (firstElementDetail) {
@@ -57,7 +57,7 @@ export class DocumentSymbolLoader {
    * Загрузить описание.
    * @returns Загруженное описание или null.
    */
-  protected async loadDocumentSymbols(): Promise<ProgrammingConstruct | null> {
+  protected async loadDocumentSymbols(): Promise<IGetOriginalSymbols | null> {
     const infoFromComment = await this.getInfoFromComment();
     const documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment);
     return Promise.resolve(documentSymbol);
@@ -106,7 +106,7 @@ export class DocumentSymbolLoader {
    * @param location {@link vscode.Location Местоположение}, для которого нужно загрузить описание.
    * @returns Возвращает загрженное описание или null.
    */
-  public static async loadWrapperProgrammingConstruct(location: vscode.Location): Promise<ProgrammingConstruct | null> {
+  public static async loadWrapperProgrammingConstruct(location: vscode.Location): Promise<IGetOriginalSymbols | null> {
     const documentSymbolLoader = await DocumentSymbolLoader.tryCreate(location);
     if (documentSymbolLoader) {
       return Promise.resolve(await documentSymbolLoader.loadDocumentSymbols());
