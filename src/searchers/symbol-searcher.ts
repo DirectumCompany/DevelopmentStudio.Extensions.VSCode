@@ -1,15 +1,7 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { ProgrammingConstruct } from '../constructs/programming-construct';
-
-/** Детальное описание элемента. */
-export interface IElementDetail {
-  container: vscode.DocumentSymbol;
-  parent: string;
-  uri: vscode.Uri;
-  textLine?: string;
-  isInjection?: boolean;
-}
+import { ElementDetail } from '../types';
 
 /** Поисковик описания. */
 export abstract class SymbolSearcher {
@@ -61,8 +53,8 @@ export abstract class SymbolSearcher {
    * @param documentUri Uri документа, в котором ищем.
    * @returns Массив с детальными описаниями.
    */
-  public async localGetSymbols(documentUri: vscode.Uri): Promise<IElementDetail[]> {
-    let result: IElementDetail[] = [];
+  public async localGetSymbols(documentUri: vscode.Uri): Promise<ElementDetail[]> {
+    let result: ElementDetail[] = [];
 
     this.documentUri = documentUri;
     const symbols = await VSCodeApi.getSymbols(this.documentUri);
@@ -99,7 +91,7 @@ export abstract class SymbolSearcher {
   public static async getSymbols(
     documentUri: vscode.Uri,
     wrapperDescription: ProgrammingConstruct,
-  ): Promise<IElementDetail[]>;
+  ): Promise<ElementDetail[]>;
   /**
    * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
@@ -111,7 +103,7 @@ export abstract class SymbolSearcher {
     documentUri: vscode.Uri,
     tokens: string,
     range: vscode.Range,
-  ): Promise<IElementDetail[]>;
+  ): Promise<ElementDetail[]>;
   /**
    * Вернуть описания.
    * @param documentUri Uri документа, в котором ищем описание.
@@ -123,7 +115,7 @@ export abstract class SymbolSearcher {
     documentUri: vscode.Uri,
     wrapperDescriptionOrToken: ProgrammingConstruct | string,
     range?: vscode.Range,
-  ): Promise<IElementDetail[]> {
+  ): Promise<ElementDetail[]> {
     let local;
     if (typeof wrapperDescriptionOrToken === 'string') {
       local = new SymbolSearcherByTokenAndRange(wrapperDescriptionOrToken, range!);

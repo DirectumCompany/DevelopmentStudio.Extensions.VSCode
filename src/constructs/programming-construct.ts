@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IElementDetail } from '../searchers/symbol-searcher';
+import { ElementDetail } from '../types';
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct {
@@ -16,7 +16,7 @@ export class ProgrammingConstruct {
   public uriFromComment: vscode.Uri | null;
 
   /** Проверить равенство по именам. */
-  protected isNameEqual(element: IElementDetail): boolean {
+  protected isNameEqual(element: ElementDetail): boolean {
     return this.name === element.container.name;
   }
 
@@ -25,7 +25,7 @@ export class ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     // Сравнение для всех остальных.
     return element.container.detail === this.detail;
   }
@@ -35,7 +35,7 @@ export class ProgrammingConstruct {
    * @param uriFromComment Uri из href-комментария.
    * @param symbol Элемент с дополнительной информацией.
    */
-  protected constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+  protected constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
@@ -46,7 +46,7 @@ export class ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  public IsEqual(element: IElementDetail): boolean {
+  public IsEqual(element: ElementDetail): boolean {
     return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
@@ -56,7 +56,7 @@ export class ProgrammingConstruct {
    * @param symbol Описание.
    * @returns Возвращается созданный в зависимости от описания объект.
    */
-  public static Create(uriFromComment: vscode.Uri | null, symbol: IElementDetail): ProgrammingConstruct {
+  public static Create(uriFromComment: vscode.Uri | null, symbol: ElementDetail): ProgrammingConstruct {
     switch (symbol.container.kind) {
       case vscode.SymbolKind.Method: {
         return new Function(uriFromComment, symbol);
@@ -84,7 +84,7 @@ class Property extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     switch (element.container.kind) {
       case vscode.SymbolKind.Property: {
         return (
@@ -99,7 +99,7 @@ class Property extends ProgrammingConstruct {
     }
   }
 
-  constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
     super(uriFromComment, symbol);
     this.parent = symbol.parent;
   }
@@ -143,7 +143,7 @@ class Structure extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isNameEqual(element: IElementDetail): boolean {
+  protected isNameEqual(element: ElementDetail): boolean {
     return this.searchNames.includes(element.container.name);
   }
 
@@ -152,14 +152,14 @@ class Structure extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     return (
       element.container.kind === vscode.SymbolKind.Class &&
       element.container.detail === this.getStructureWithoutPrefix()
     );
   }
 
-  constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
     super(uriFromComment, symbol);
     this.addTokensForSearch();
   }
@@ -214,7 +214,7 @@ class Function extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns Описание функции для сравнения.
    */
-  private getFunctionDetailForCompare(element: IElementDetail): string {
+  private getFunctionDetailForCompare(element: ElementDetail): string {
     // Если функция инъекции, изолированная, функция модуля, инициализации или статическая, то первый параметр должен остаться.
     if (
       this.isInjection ||
@@ -231,7 +231,7 @@ class Function extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     // Сравнение для функций
     if (element.container.kind === vscode.SymbolKind.Method) {
       const functionDetail = this.getFunctionDetailForCompare(element);
@@ -243,7 +243,7 @@ class Function extends ProgrammingConstruct {
     return super.isDetailEqual(element);
   }
 
-  constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
     super(uriFromComment, symbol);
     this.isInjection = symbol.isInjection;
   }
