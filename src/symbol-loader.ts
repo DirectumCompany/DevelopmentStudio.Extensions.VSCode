@@ -21,7 +21,7 @@ export class DocumentSymbolLoader {
    */
   private async getInfoFromComment(): Promise<InfoFromComment> {
     const regexHref = /\/\/\/\s*<see href="file:\/\/\/([^"]*)" internal=""( proxy="")? \/>/;
-    for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
+    for (let lineNumber = this.range.start.line - 1; lineNumber > this.range.start.line - 10; lineNumber--) {
       const line = this.documentLines[lineNumber];
       const match = line.match(regexHref);
       if (match) {

@@ -59,7 +59,7 @@ export abstract class SymbolSearcher implements IGetSymbols {
     for (const uri of this.documentUri!) {
       const symbols = await VSCodeApi.getSymbols(uri);
 
-      if (symbols.length > 0) {
+      if (symbols && symbols.length > 0) {
         for (const symbol of symbols) {
           this.parent = symbol.name;
 
