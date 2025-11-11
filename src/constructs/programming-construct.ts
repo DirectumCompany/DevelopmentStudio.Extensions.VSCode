@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ElementDetail, InfoFromComment, IGetOriginalSymbols } from '../types';
-import { SymbolSearcher } from '../searchers/symbol-searcher';
+import { SymbolSearcherByWrapperDescription } from '../searchers/symbol-searcher-by-wrapper';
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct implements IGetOriginalSymbols {
@@ -61,7 +61,20 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
   }
 
   public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<ElementDetail[]> {
-    return await SymbolSearcher.getOriginalSymbolByHrefComment(this);
+    return await this.getOriginalSymbolByHrefComment(this);
+  }
+
+  /**
+   * Вернуть описания по ссылке из комментария.
+   * @param wrapperDescription Определение из обертки, на основе которого ищем описание.
+   * @returns Массив с детальными описаниями.
+   */
+  public async getOriginalSymbolByHrefComment(wrapperDescription: ProgrammingConstruct): Promise<ElementDetail[]> {
+    if (wrapperDescription.uriFromComment) {
+      const local = new SymbolSearcherByWrapperDescription(wrapperDescription.uriFromComment, wrapperDescription);
+      return await local.getSymbols();
+    }
+    return Promise.resolve([]);
   }
 
   /**

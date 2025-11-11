@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
-import { SymbolSearcher } from './searchers/symbol-searcher';
+import { SymbolSearcher } from './searchers/symbol-searcher-base';
 import { ProgrammingConstruct } from './constructs/programming-construct';
-import { InfoFromComment, IGetOriginalSymbols } from './types';
+import { InfoFromComment, IGetOriginalSymbols, ElementDetail } from './types';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
@@ -45,12 +45,28 @@ export class DocumentSymbolLoader {
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону или null.
    */
   private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<IGetOriginalSymbols | null> {
-    const symbolWrapper = await SymbolSearcher.getSymbolsByToken(this.uri, this.getToken(), this.range);
-    const firstElementDetail = symbolWrapper.shift();
+    const firstElementDetail = await this.getSymbolsByToken(this.uri, this.getToken(), this.range);
     if (firstElementDetail) {
       return Promise.resolve(ProgrammingConstruct.Create(infoFromComment, firstElementDetail));
     }
     return Promise.resolve(null);
+  }
+
+  /**
+   * Вернуть описания по токену.
+   * @param documentUri Uri документа, в котором ищем описание.
+   * @param tokens Токены поиска.
+   * @param range Диапазон поиска.
+   * @returns Массив с детальными описаниями.
+   */
+  private async getSymbolsByToken(
+    documentUri: vscode.Uri,
+    tokens: string,
+    range: vscode.Range,
+  ): Promise<ElementDetail | null> {
+    const local = new SymbolSearcherByTokenAndRange(documentUri, tokens, range!);
+    const symbol = await local.getSymbols();
+    return Promise.resolve(!Array.isArray(symbol) ? symbol : null);
   }
 
   /**
@@ -112,5 +128,42 @@ export class DocumentSymbolLoader {
       return Promise.resolve(await documentSymbolLoader.loadDocumentSymbols());
     }
     return Promise.resolve(null);
+  }
+}
+
+/** Поисковик описания по токену и диапазону */
+class SymbolSearcherByTokenAndRange extends SymbolSearcher {
+  /** Токен для поиска. */
+  private token: string;
+
+  /** Диапазон поиска. */
+  private range: vscode.Range;
+
+  /**
+   * Признак, что контейнер подходит под условия при сравнении с переданными токенами.
+   * @param uri Uri документа, в котором ищем.
+   * @param container Контейнер.
+   * @returns true - если контейнер подходит под условия, иначе - false.
+   */
+  protected async needGetSymbol(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<boolean> {
+    if (this.token === container.name) {
+      const location = container.selectionRange;
+      return Promise.resolve(location.isEqual(this.range));
+    }
+    return Promise.resolve(false);
+  }
+
+  /**
+   * Конструктор.
+   * @param uri Uri документа, в котором ищем.
+   * @param token Токен для поиска.
+   * @param range Диапазон для поиска.
+   */
+  constructor(uri: vscode.Uri, token: string, range: vscode.Range) {
+    super();
+    this.documentUri = [uri];
+    this.token = token;
+    this.range = range;
+    this.needOnlyOneResult = true;
   }
 }
