@@ -45,8 +45,7 @@ export class DocumentSymbolLoader {
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону или null.
    */
   private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<ProgrammingConstruct | null> {
-    const token = this.getToken();
-    const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
+    const symbolWrapper = await SymbolSearcher.getSymbolsByToken(this.uri, this.getToken(), this.range);
     const firstElementDetail = symbolWrapper.shift();
     if (firstElementDetail) {
       return Promise.resolve(ProgrammingConstruct.Create(infoFromComment, firstElementDetail));

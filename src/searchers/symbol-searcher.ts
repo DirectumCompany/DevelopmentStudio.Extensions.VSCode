@@ -89,46 +89,35 @@ export abstract class SymbolSearcher {
   }
 
   /**
-   * Вернуть описания.
-   * @param documentUri Uri документа, в котором ищем описание.
-   * @param wrapperDescription Определение из обертки, на основе котрого ищем описание.
-   * @returns Массив с детальными описаниями.
-   */
-  public static async getSymbols(
-    documentUri: vscode.Uri,
-    wrapperDescription: ProgrammingConstruct,
-  ): Promise<ElementDetail[]>;
-  /**
-   * Вернуть описания.
+   * Вернуть описания по токену.
    * @param documentUri Uri документа, в котором ищем описание.
    * @param tokens Токены поиска.
    * @param range Диапазон поиска.
    * @returns Массив с детальными описаниями.
    */
-  public static async getSymbols(
+  public static async getSymbolsByToken(
     documentUri: vscode.Uri,
     tokens: string,
     range: vscode.Range,
-  ): Promise<ElementDetail[]>;
+  ): Promise<ElementDetail[]> {
+    const local = new SymbolSearcherByTokenAndRange(documentUri, tokens, range!);
+    return await local.localGetSymbols();
+  }
+
   /**
-   * Вернуть описания.
-   * @param documentUri Uri документа, в котором ищем описание.
-   * @param wrapperDescriptionOrToken Определение из обертки или токены поиска, на основе которых ищем описание.
-   * @param range Диапазон поиска.
+   * Вернуть описания по ссылке из комментария.
+   * @param wrapperDescription Определение из обертки, на основе которого ищем описание.
    * @returns Массив с детальными описаниями.
    */
-  public static async getSymbols(
-    documentUri: vscode.Uri,
-    wrapperDescriptionOrToken: ProgrammingConstruct | string,
-    range?: vscode.Range,
+  public static async getOriginalSymbolByHrefComment(
+    wrapperDescription: ProgrammingConstruct,
   ): Promise<ElementDetail[]> {
-    let local;
-    if (typeof wrapperDescriptionOrToken === 'string') {
-      local = new SymbolSearcherByTokenAndRange(documentUri, wrapperDescriptionOrToken, range!);
-    } else {
-      local = new SymbolSearcherByWrapperDescription(documentUri, wrapperDescriptionOrToken);
+    const result: ElementDetail[] = [];
+    if (wrapperDescription.uriFromComment) {
+      const local = new SymbolSearcherByWrapperDescription(wrapperDescription.uriFromComment, wrapperDescription);
+      return Promise.resolve(await local.localGetSymbols());
     }
-    return await local.localGetSymbols();
+    return Promise.resolve(result);
   }
 }
 
