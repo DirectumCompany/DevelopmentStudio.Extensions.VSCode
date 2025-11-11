@@ -51,6 +51,15 @@ export class ProgrammingConstruct {
   }
 
   /**
+   * Вернуть массив uri, в которых надо искать.
+   * @param uri Исходный uri.
+   * @returns Массив uri.
+   */
+  public getUris(uri: vscode.Uri): vscode.Uri[] {
+    return [uri];
+  }
+
+  /**
    * Создать объект в зависимости от его типа.
    * @param uriFromComment Uri из href-комментария.
    * @param symbol Описание.
