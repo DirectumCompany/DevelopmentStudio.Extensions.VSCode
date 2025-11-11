@@ -14,9 +14,6 @@ export class DocumentSymbolLoader {
   /** Массив строк документа. */
   private documentLines: string[];
 
-  /** Uri из href-комментария. */
-  public originalUri?: vscode.Uri | null;
-
   /** Описание из враппера. */
   public documentSymbol?: ProgrammingConstruct | null;
 
@@ -46,16 +43,20 @@ export class DocumentSymbolLoader {
 
   /**
    * Вернуть определение из обертки.
+   * @param uriFromComment Uri из href-комментария.
    * @param isInjection Признак, что определение - инъекция.
    * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
    */
-  private async getWrapperDocumentSymbol(isInjection: boolean): Promise<ProgrammingConstruct | null> {
+  private async getWrapperDocumentSymbol(
+    uriFromComment: vscode.Uri | null,
+    isInjection: boolean,
+  ): Promise<ProgrammingConstruct | null> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
     const firstElementDetail = symbolWrapper.shift();
     if (firstElementDetail) {
       firstElementDetail.isInjection = isInjection;
-      return Promise.resolve(ProgrammingConstruct.Create(firstElementDetail));
+      return Promise.resolve(ProgrammingConstruct.Create(uriFromComment, firstElementDetail));
     }
     return Promise.resolve(null);
   }
@@ -69,8 +70,7 @@ export class DocumentSymbolLoader {
       this.documentLines = await VSCodeApi.loadDocumentLine(this.uri);
       const infoFromComment = await this.getInfoFromComment();
       if (infoFromComment) {
-        this.originalUri = infoFromComment.uri;
-        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment.isInjection);
+        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment.uri, infoFromComment.isInjection);
         if (this.documentSymbol) {
           return Promise.resolve(true);
         }

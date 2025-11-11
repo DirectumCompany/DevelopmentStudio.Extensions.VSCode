@@ -12,6 +12,9 @@ export class ProgrammingConstruct {
   /** Детальное описание. */
   public detail: string;
 
+  /** Uri из комментария. */
+  public uriFromComment: vscode.Uri | null;
+
   /** Проверить равенство по именам. */
   protected isNameEqual(element: IElementDetail): boolean {
     return this.name === element.container.name;
@@ -29,12 +32,14 @@ export class ProgrammingConstruct {
 
   /**
    * Создает описание из враппера.
+   * @param uriFromComment Uri из href-комментария.
    * @param symbol Элемент с дополнительной информацией.
    */
-  protected constructor(symbol: IElementDetail) {
+  protected constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
+    this.uriFromComment = uriFromComment;
   }
 
   /** Признак, что переданный для сравнения элемент равен текущему.
@@ -47,22 +52,23 @@ export class ProgrammingConstruct {
 
   /**
    * Создать объект в зависимости от его типа.
+   * @param uriFromComment Uri из href-комментария.
    * @param symbol Описание.
    * @returns Возвращается созданный в зависимости от описания объект.
    */
-  public static Create(symbol: IElementDetail): ProgrammingConstruct {
+  public static Create(uriFromComment: vscode.Uri | null, symbol: IElementDetail): ProgrammingConstruct {
     switch (symbol.container.kind) {
       case vscode.SymbolKind.Method: {
-        return new Function(symbol);
+        return new Function(uriFromComment, symbol);
       }
       case vscode.SymbolKind.Property: {
-        return new Property(symbol);
+        return new Property(uriFromComment, symbol);
       }
       case vscode.SymbolKind.Interface: {
-        return new Structure(symbol);
+        return new Structure(uriFromComment, symbol);
       }
       default: {
-        return new ProgrammingConstruct(symbol);
+        return new ProgrammingConstruct(uriFromComment, symbol);
       }
     }
   }
@@ -93,8 +99,8 @@ class Property extends ProgrammingConstruct {
     }
   }
 
-  constructor(symbol: IElementDetail) {
-    super(symbol);
+  constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+    super(uriFromComment, symbol);
     this.parent = symbol.parent;
   }
 }
@@ -153,8 +159,8 @@ class Structure extends ProgrammingConstruct {
     );
   }
 
-  constructor(symbol: IElementDetail) {
-    super(symbol);
+  constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+    super(uriFromComment, symbol);
     this.addTokensForSearch();
   }
 }
@@ -237,8 +243,8 @@ class Function extends ProgrammingConstruct {
     return super.isDetailEqual(element);
   }
 
-  constructor(symbol: IElementDetail) {
-    super(symbol);
+  constructor(uriFromComment: vscode.Uri | null, symbol: IElementDetail) {
+    super(uriFromComment, symbol);
     this.isInjection = symbol.isInjection;
   }
 }

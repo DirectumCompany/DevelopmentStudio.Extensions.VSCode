@@ -24,13 +24,11 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
 
       if (await symbolLoader.tryLoadDocumentSymbols()) {
         const originalSymbols = await SymbolSearcher.getSymbols(
-          symbolLoader.originalUri!,
+          symbolLoader.documentSymbol?.uriFromComment!,
           symbolLoader.documentSymbol!,
         );
         modifiedDefinitions.unshift(
-          ...originalSymbols.map(
-            (symbol) => new vscode.Location(symbolLoader.originalUri!, symbol.container.selectionRange),
-          ),
+          ...originalSymbols.map((symbol) => new vscode.Location(symbol.uri, symbol.container.selectionRange)),
         );
       }
     }

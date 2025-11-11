@@ -6,6 +6,7 @@ import { ProgrammingConstruct } from '../constructs/programming-construct';
 export interface IElementDetail {
   container: vscode.DocumentSymbol;
   parent: string;
+  uri: vscode.Uri;
   textLine?: string;
   isInjection?: boolean;
 }
@@ -76,6 +77,7 @@ export abstract class SymbolSearcher {
             ...findResult.map((element) => ({
               container: element,
               parent: this.parent!,
+              uri: this.documentUri!,
             })),
           );
         }
@@ -198,6 +200,7 @@ class SymbolSearcherByWrapperDescription extends SymbolSearcher {
       this.wrapperDescription.IsEqual({
         container: container,
         parent: this.parent!,
+        uri: this.documentUri!,
         textLine: textLine,
       }),
     );
