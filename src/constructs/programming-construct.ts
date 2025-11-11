@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ElementDetail } from '../types';
+import { ElementDetail, InfoFromComment } from '../types';
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct {
@@ -56,19 +56,19 @@ export class ProgrammingConstruct {
    * @param symbol Описание.
    * @returns Возвращается созданный в зависимости от описания объект.
    */
-  public static Create(uriFromComment: vscode.Uri | null, symbol: ElementDetail): ProgrammingConstruct {
+  public static Create(uriFromComment: InfoFromComment, symbol: ElementDetail): ProgrammingConstruct {
     switch (symbol.container.kind) {
       case vscode.SymbolKind.Method: {
         return new Function(uriFromComment, symbol);
       }
       case vscode.SymbolKind.Property: {
-        return new Property(uriFromComment, symbol);
+        return new Property(uriFromComment.uri, symbol);
       }
       case vscode.SymbolKind.Interface: {
-        return new Structure(uriFromComment, symbol);
+        return new Structure(uriFromComment.uri, symbol);
       }
       default: {
-        return new ProgrammingConstruct(uriFromComment, symbol);
+        return new ProgrammingConstruct(uriFromComment.uri, symbol);
       }
     }
   }
@@ -243,8 +243,8 @@ class Function extends ProgrammingConstruct {
     return super.isDetailEqual(element);
   }
 
-  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
-    super(uriFromComment, symbol);
-    this.isInjection = symbol.isInjection;
+  constructor(infoFromComment: InfoFromComment, symbol: ElementDetail) {
+    super(infoFromComment.uri, symbol);
+    this.isInjection = infoFromComment.isInjection;
   }
 }

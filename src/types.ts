@@ -6,5 +6,10 @@ export type ElementDetail = {
   parent: string;
   uri: vscode.Uri;
   textLine?: string;
-  isInjection?: boolean;
+};
+
+/** Информация из комментария. */
+export type InfoFromComment = {
+  uri: vscode.Uri | null;
+  isInjection: boolean;
 };

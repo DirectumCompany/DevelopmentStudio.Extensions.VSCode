@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher';
 import { ProgrammingConstruct } from './constructs/programming-construct';
+import { InfoFromComment } from './types';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
@@ -19,9 +20,9 @@ export class DocumentSymbolLoader {
 
   /**
    * Вернуть ссылку на документ и признак инъекции из комментария.
-   * @returns Возвращает Uri на файл с описанием определения и признак инъекции или null.
+   * @returns Возвращает Uri на файл с описанием определения или null и признак инъекции.
    */
-  private async getInfoFromComment(): Promise<{ uri: vscode.Uri; isInjection: boolean } | null> {
+  private async getInfoFromComment(): Promise<InfoFromComment> {
     const regexHref = /\/\/\/\s*<see href="file:\/\/\/([^"]*)" internal=""( proxy="")? \/>/;
     for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
       const line = this.documentLines[lineNumber];
@@ -30,7 +31,7 @@ export class DocumentSymbolLoader {
         return Promise.resolve({ uri: vscode.Uri.file(match[1].toString()), isInjection: match[2]?.length > 0 });
       }
     }
-    return Promise.resolve(null);
+    return Promise.resolve({ uri: null, isInjection: false });
   }
 
   /**
@@ -43,20 +44,15 @@ export class DocumentSymbolLoader {
 
   /**
    * Вернуть определение из обертки.
-   * @param uriFromComment Uri из href-комментария.
-   * @param isInjection Признак, что определение - инъекция.
-   * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
+   * @param infoFromComment  {@link InfoFromComment Uri и признак инъекции}, полученные из комментария.
+   * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону или null.
    */
-  private async getWrapperDocumentSymbol(
-    uriFromComment: vscode.Uri | null,
-    isInjection: boolean,
-  ): Promise<ProgrammingConstruct | null> {
+  private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<ProgrammingConstruct | null> {
     const token = this.getToken();
     const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
     const firstElementDetail = symbolWrapper.shift();
     if (firstElementDetail) {
-      firstElementDetail.isInjection = isInjection;
-      return Promise.resolve(ProgrammingConstruct.Create(uriFromComment, firstElementDetail));
+      return Promise.resolve(ProgrammingConstruct.Create(infoFromComment, firstElementDetail));
     }
     return Promise.resolve(null);
   }
@@ -70,7 +66,7 @@ export class DocumentSymbolLoader {
       this.documentLines = await VSCodeApi.loadDocumentLine(this.uri);
       const infoFromComment = await this.getInfoFromComment();
       if (infoFromComment) {
-        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment.uri, infoFromComment.isInjection);
+        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment);
         if (this.documentSymbol) {
           return Promise.resolve(true);
         }
