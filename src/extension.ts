@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { AdditionalDefinitionProvider } from './definition-provider';
-import { showSettingsUpdateDialog } from './settings';
+import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';
 
 /**
  * Подождать пока активируется расширение ms-dotnettools.csharp.
@@ -23,9 +23,9 @@ export async function activate(context: vscode.ExtensionContext) {
     new AdditionalDefinitionProvider(),
   );
   context.subscriptions.push(disposable);
+
+  await addStatusBarCommand(context);
 }
 
-export function deactivate() {} 
-
-
-
+export function deactivate() {}
+ 

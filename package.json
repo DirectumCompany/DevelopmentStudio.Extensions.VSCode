@@ -18,6 +18,28 @@
   "extensionDependencies": [
     "ms-dotnettools.csharp"
   ],
+  "contributes": {
+    "configuration": [
+      {
+        "title": "Sungero",
+        "properties": {
+          "sungero.resourseLanguageDefault": {
+            "type": "string",
+            "enumItemLabels": [
+              "default (en)",
+              "ru"
+            ],
+            "enum": [
+              "en",
+              "ru"
+            ],
+            "description": "Предпочтительный язык ресурсных файлов.",
+            "default": "en"
+          }
+        }
+      }
+    ]
+  },
   "scripts": {
     "vscode:prepublish": "npm run package",
     "package": "webpack --mode production --devtool hidden-source-map",
@@ -40,3 +62,7 @@
     "webpack-cli": "^6.0.1"
   }
 }
+
+
+
+
