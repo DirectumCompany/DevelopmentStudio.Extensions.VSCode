@@ -32,3 +32,8 @@ export interface IGetSymbols {
    */
   getSymbols(): Promise<ElementDetail | vscode.Location[]>;
 }
+
+/** Словарь со списком строк с ключом по uri. */
+export type TextLinesByUri = {
+  [uri: string]: string[];
+};

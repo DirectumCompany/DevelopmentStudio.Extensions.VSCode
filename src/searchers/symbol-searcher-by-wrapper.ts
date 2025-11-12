@@ -2,14 +2,15 @@ import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { ProgrammingConstruct } from '../constructs/programming-construct';
 import { SymbolSearcher } from './symbol-searcher-base';
+import { TextLinesByUri } from '../types';
 
 /** Поисковик описания по определению из обертки */
 export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
   /** Определение из обертки. */
   private wrapperDescription: ProgrammingConstruct;
 
-  /** Строки документа. */
-  private textLines: string[] = [];
+  /** Словарь строк документа по Uri. */
+  private textLinesByUriDictionary: TextLinesByUri;
 
   /** Вернуть строку по позиции.
    * @param uri Uri документа, в котором ищем.
@@ -17,10 +18,21 @@ export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
    * @returns Строка по переданной позиции.
    */
   private async getTextLine(uri: vscode.Uri, position: vscode.Position): Promise<string> {
-    if (this.textLines.length === 0) {
-      this.textLines = await VSCodeApi.loadDocumentLines(uri);
+    const textLines = await this.getTextLinesByUri(uri);
+    return Promise.resolve(textLines[position.line]);
+  }
+
+  /**
+   * Вернуть список строк по Uri.
+   * @param uri Uri документа.
+   * @returns Массив строк из документа по указанному Uri.
+   */
+  private async getTextLinesByUri(uri: vscode.Uri): Promise<string[]> {
+    const index = uri.path;
+    if (!this.textLinesByUriDictionary[index] || this.textLinesByUriDictionary[index].length === 0) {
+      this.textLinesByUriDictionary[index] = await VSCodeApi.loadDocumentLines(uri);
     }
-    return Promise.resolve(this.textLines[position.line]);
+    return this.textLinesByUriDictionary[index];
   }
 
   /**
@@ -51,5 +63,6 @@ export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
     this.wrapperDescription = wrapperDescription;
     this.needOnlyOneResult = false;
     this.documentUri = wrapperDescription.getUris(uri);
+    this.textLinesByUriDictionary = {};
   }
 }
