@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ElementDetail, InfoFromComment, IGetOriginalSymbols, SupportUriFromComment } from '../types';
-import { SymbolSearcherByHrefComment } from '../searchers/symbol-searcher-by-wrapper';
+import { SymbolSearcherByHrefComment } from '../searchers/symbol-searcher-by-comment';
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFromComment {

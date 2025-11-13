@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, IGetOriginalSymbols } from '../types';
-import { SymbolSearcherResources } from '../searchers/symbol-searcher-resources';
+import { ResourcesSearcher } from '../searchers/searcher-resources';
 import { DocumentSymbolLoader } from '../symbol-loader';
 
 export class Resources {
@@ -99,7 +99,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   ): Promise<vscode.Location[]> {
     const result = [];
     const documentUri = await this.getUriFromImplementation(location);
-    const local = new SymbolSearcherResources(documentUri, wrapperDescription);
+    const local = new ResourcesSearcher(documentUri, wrapperDescription);
     const symbols = await local.getSymbols();
     result.push(...symbols);
     return Promise.resolve(result);

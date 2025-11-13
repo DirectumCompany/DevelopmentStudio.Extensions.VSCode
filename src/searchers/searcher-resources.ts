@@ -3,7 +3,7 @@ import * as VSCodeApi from '../vscode-api';
 import { IGetSymbols, TextLinesByUri } from '../types';
 import { ResourceEntityOrReport } from '../constructs/resources-construct';
 
-export class SymbolSearcherResources implements IGetSymbols {
+export class ResourcesSearcher implements IGetSymbols {
   /** Определение из обертки. */
   protected wrapperDescription: ResourceEntityOrReport;
 
