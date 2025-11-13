@@ -38,6 +38,20 @@
           }
         }
       }
+    ],
+    "commands": [
+      {
+        "command": "sungero.resourcesOpensInPeek",
+        "title": "Show peek view of the resources",
+        "category": "Sungero"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "sungero.resourcesOpensInPeek",
+        "key": "Ctrl+Alt+R",
+        "when": "(editorLangId == csharp) && editorTextFocus"
+      }
     ]
   },
   "scripts": {
@@ -62,6 +76,10 @@
     "webpack-cli": "^6.0.1"
   }
 }
+
+
+
+
 
 
 

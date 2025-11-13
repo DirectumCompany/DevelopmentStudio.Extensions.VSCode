@@ -33,3 +33,17 @@ export const loadDocumentLines = async (uri: vscode.Uri) => {
 export const getImplementations = async (documentUri: vscode.Uri, position: vscode.Position) => {
   return vscode.commands.executeCommand<vscode.Location[]>('vscode.executeImplementationProvider', documentUri, position);
 };
+
+/**
+ * Показать ссылки.
+ * @param documentUri Uri документа, где была вызвана команда.
+ * @param position Позиция, где была вызвана команад.
+ * @param originalSymbols Определения, которые нужно показать.
+ */
+export const showReferences = async (
+  documentUri: vscode.Uri,
+  position: vscode.Position,
+  originalSymbols: vscode.Location[],
+) => {
+  return vscode.commands.executeCommand('editor.action.showReferences', documentUri, position, originalSymbols);
+};

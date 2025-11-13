@@ -55,3 +55,17 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
     return Promise.resolve(modifiedDefinitions);
   }
 }
+
+/**
+ * Выполнить команду перехода к определению символа в заданной позиции документа или показа списка с такими символами.
+ * @param document Документ, в котором была вызвана команда.
+ * @param position Позиция, в которой была вызвана команда.
+ * @returns Производится переход к определению символа, если нашлось только одно определение или показывается peek, если нашлось несколько.
+ */
+export async function resourcesOpensInPeekCommand(document: vscode.TextDocument, position: vscode.Position) {
+  const modifiedDefinitions = await VSCodeApi.getDefinitions(document.uri, position);
+  const onlyResourcesDefinition = modifiedDefinitions.filter((item) => item.uri.fsPath.endsWith('resx'));
+  if (onlyResourcesDefinition.length > 0) {
+    await VSCodeApi.showReferences(document.uri, position, onlyResourcesDefinition);
+  }
+}
