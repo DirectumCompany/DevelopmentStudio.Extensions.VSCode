@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher-base';
-import { ProgrammingConstruct } from './constructs/programming-construct';
+import { createWrapperConstruct } from './constructs/programming-construct';
 import { InfoFromComment, IGetOriginalSymbols, ElementDetail } from './types';
 
 /** Загрузчик описания из враппера. */
@@ -47,7 +47,7 @@ export class DocumentSymbolLoader {
   private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<IGetOriginalSymbols | null> {
     const firstElementDetail = await this.getSymbolsByToken(this.uri, this.getToken(), this.range);
     if (firstElementDetail) {
-      return Promise.resolve(ProgrammingConstruct.Create(infoFromComment, firstElementDetail));
+      return Promise.resolve(createWrapperConstruct(infoFromComment, firstElementDetail));
     }
     return Promise.resolve(null);
   }

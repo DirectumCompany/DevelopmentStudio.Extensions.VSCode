@@ -1,6 +1,38 @@
 import * as vscode from 'vscode';
 import { ElementDetail, InfoFromComment, IGetOriginalSymbols } from '../types';
 import { SymbolSearcherByWrapperDescription } from '../searchers/symbol-searcher-by-wrapper';
+import { ResourceEntityOrReport, ResourceModuleOrSolution } from './resources-construct';
+
+/**
+ * Создать объект в зависимости от его типа.
+ * @param infoFromComment Uri из href-комментария.
+ * @param symbol Описание.
+ * @returns Возвращается созданный в зависимости от описания объект.
+ */
+export function createWrapperConstruct(infoFromComment: InfoFromComment, symbol: ElementDetail): IGetOriginalSymbols {
+  switch (symbol.container.kind) {
+    case vscode.SymbolKind.Method: {
+      return symbol.parent.endsWith('Resources')
+        ? symbol.uri.fsPath.endsWith('Module.g.cs')
+          ? new ResourceModuleOrSolution(symbol)
+          : new ResourceEntityOrReport(symbol)
+        : new Function(infoFromComment, symbol);
+    }
+    case vscode.SymbolKind.Property: {
+      return symbol.parent.endsWith('Resources')
+        ? symbol.uri.fsPath.endsWith('Module.g.cs')
+          ? new ResourceModuleOrSolution(symbol)
+          : new ResourceEntityOrReport(symbol)
+        : new Property(infoFromComment.uri, symbol);
+    }
+    case vscode.SymbolKind.Interface: {
+      return new Structure(infoFromComment.uri, symbol);
+    }
+    default: {
+      return new ProgrammingConstruct(infoFromComment.uri, symbol);
+    }
+  }
+}
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct implements IGetOriginalSymbols {
@@ -36,7 +68,7 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
    * @param uriFromComment Uri из href-комментария.
    * @param symbol Элемент с дополнительной информацией.
    */
-  protected constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
+  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
@@ -78,29 +110,6 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
       }
     }
     return Promise.resolve([]);
-  }
-
-  /**
-   * Создать объект в зависимости от его типа.
-   * @param uriFromComment Uri из href-комментария.
-   * @param symbol Описание.
-   * @returns Возвращается созданный в зависимости от описания объект.
-   */
-  public static Create(uriFromComment: InfoFromComment, symbol: ElementDetail): IGetOriginalSymbols {
-    switch (symbol.container.kind) {
-      case vscode.SymbolKind.Method: {
-        return new Function(uriFromComment, symbol);
-      }
-      case vscode.SymbolKind.Property: {
-        return new Property(uriFromComment.uri, symbol);
-      }
-      case vscode.SymbolKind.Interface: {
-        return new Structure(uriFromComment.uri, symbol);
-      }
-      default: {
-        return new ProgrammingConstruct(uriFromComment.uri, symbol);
-      }
-    }
   }
 }
 

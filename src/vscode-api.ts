@@ -24,3 +24,12 @@ export const loadDocumentLines = async (uri: vscode.Uri) => {
   const dtsDocument = (await vscode.workspace.fs.readFile(uri)).toString();
   return dtsDocument.split('\n');
 };
+
+/**
+ * Вернуть реализацию.
+ * @param documentUri Uri документа, в котором вызывана команда.
+ * @param position Позиция, где была вызвана команда.
+ */
+export const getImplementations = async (documentUri: vscode.Uri, position: vscode.Position) => {
+  return vscode.commands.executeCommand<vscode.Location[]>('vscode.executeImplementationProvider', documentUri, position);
+};
