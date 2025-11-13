@@ -11,7 +11,7 @@ export abstract class SymbolSearcher implements IGetSymbols {
   protected needOnlyOneResult: boolean = false;
 
   /** Uri документа. */
-  protected documentUri?: vscode.Uri[];
+  protected documentUri!: vscode.Uri;
 
   /**
    * Признак, что контейнер подходит под условия.
@@ -56,34 +56,42 @@ export abstract class SymbolSearcher implements IGetSymbols {
   public async getSymbols(): Promise<ElementDetail | vscode.Location[]> {
     const result: ElementDetail[] = [];
 
-    for (const uri of this.documentUri!) {
-      const symbols = await VSCodeApi.getSymbols(uri);
+    const uri = this.documentUri;
+    const symbols = await VSCodeApi.getSymbols(uri);
 
-      if (symbols && symbols.length > 0) {
-        for (const symbol of symbols) {
-          this.parent = symbol.name;
+    if (symbols && symbols.length > 0) {
+      for (const symbol of symbols) {
+        this.parent = symbol.name;
 
-          let findResult: vscode.DocumentSymbol[] = [];
-          if (await this.findSymbol(uri, symbol, findResult)) {
-            result.push(
-              ...findResult.map((element) => ({
-                container: element,
-                parent: this.parent!,
-                uri: uri,
-              })),
-            );
-          }
+        let findResult: vscode.DocumentSymbol[] = [];
+        if (await this.findSymbol(uri, symbol, findResult)) {
+          result.push(
+            ...findResult.map((element) => ({
+              container: element,
+              parent: this.parent!,
+              uri: uri,
+            })),
+          );
+        }
 
-          if (this.needOnlyOneResult && result.length) {
-            break;
-          }
+        if (this.needOnlyOneResult && result.length) {
+          break;
         }
       }
     }
+
     return Promise.resolve(
       this.needOnlyOneResult
         ? result.pop()!
         : result.map((symbol) => new vscode.Location(symbol.uri, symbol.container.selectionRange)),
     );
+  }
+
+  /**
+   * Конструктор.
+   * @param uri Uri документа.
+   */
+  constructor(uri: vscode.Uri) {
+    this.documentUri = uri;
   }
 }

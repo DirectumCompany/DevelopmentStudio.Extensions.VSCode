@@ -5,6 +5,20 @@ import { ElementDetail, IGetOriginalSymbols } from '../types';
 import { SymbolSearcherResources } from '../searchers/symbol-searcher-resources';
 import { DocumentSymbolLoader } from '../symbol-loader';
 
+export class Resources {
+  public static Create(symbol: ElementDetail): IGetOriginalSymbols | null {
+    if (
+      symbol.parent.endsWith('Resources') &&
+      [vscode.SymbolKind.Method, vscode.SymbolKind.Property].includes(symbol.container.kind)
+    ) {
+      return symbol.uri.fsPath.endsWith('Module.g.cs')
+        ? new ResourceModuleOrSolution(symbol)
+        : new ResourceEntityOrReport(symbol);
+    }
+    return null;
+  }
+}
+
 /** Описание элемента ресурсной строки сущности или отчета. */
 export class ResourceEntityOrReport implements IGetOriginalSymbols {
   /** Имя. */
@@ -107,7 +121,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
 }
 
 /** Описание элемента ресурсной строки модуля или решения. */
-export class ResourceModuleOrSolution extends ResourceEntityOrReport {
+class ResourceModuleOrSolution extends ResourceEntityOrReport {
   /** Детальное описание элемента. */
   protected symbol: ElementDetail;
 

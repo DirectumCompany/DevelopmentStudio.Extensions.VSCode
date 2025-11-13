@@ -1,16 +1,15 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
-import { ProgrammingConstruct } from '../constructs/programming-construct';
 import { SymbolSearcher } from './symbol-searcher-base';
-import { TextLinesByUri } from '../types';
+import { SupportUriFromComment } from '../types';
 
-/** Поисковик описания по определению из обертки */
-export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
+/** Поисковик описания по информации из href-комментария */
+export class SymbolSearcherByHrefComment extends SymbolSearcher {
   /** Определение из обертки. */
-  private wrapperDescription: ProgrammingConstruct;
+  private wrapperDescription: SupportUriFromComment;
 
-  /** Словарь строк документа по Uri. */
-  private textLinesByUriDictionary: TextLinesByUri;
+  /** Строки документа. */
+  private textLines: string[] = [];
 
   /** Вернуть строку по позиции.
    * @param uri Uri документа, в котором ищем.
@@ -18,21 +17,10 @@ export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
    * @returns Строка по переданной позиции.
    */
   private async getTextLine(uri: vscode.Uri, position: vscode.Position): Promise<string> {
-    const textLines = await this.getTextLinesByUri(uri);
-    return Promise.resolve(textLines[position.line]);
-  }
-
-  /**
-   * Вернуть список строк по Uri.
-   * @param uri Uri документа.
-   * @returns Массив строк из документа по указанному Uri.
-   */
-  private async getTextLinesByUri(uri: vscode.Uri): Promise<string[]> {
-    const index = uri.path;
-    if (!this.textLinesByUriDictionary[index] || this.textLinesByUriDictionary[index].length === 0) {
-      this.textLinesByUriDictionary[index] = await VSCodeApi.loadDocumentLines(uri);
+    if (this.textLines.length === 0) {
+      this.textLines = await VSCodeApi.loadDocumentLines(uri);
     }
-    return this.textLinesByUriDictionary[index];
+    return Promise.resolve(this.textLines[position.line]);
   }
 
   /**
@@ -44,7 +32,7 @@ export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
   protected async needGetSymbol(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<boolean> {
     const textLine = await this.getTextLine(uri, container.selectionRange.start);
     return Promise.resolve(
-      this.wrapperDescription.IsEqual({
+      this.wrapperDescription.isEqual({
         container: container,
         parent: this.parent!,
         uri: uri,
@@ -58,11 +46,9 @@ export class SymbolSearcherByWrapperDescription extends SymbolSearcher {
    * @param uri Uri документа.
    * @param wrapperDescription Описание программной конструкции.
    */
-  constructor(uri: vscode.Uri, wrapperDescription: ProgrammingConstruct) {
-    super();
+  constructor(wrapperDescription: SupportUriFromComment) {
+    super(wrapperDescription.uriFromComment);
     this.wrapperDescription = wrapperDescription;
     this.needOnlyOneResult = false;
-    this.documentUri = wrapperDescription.getUris(uri);
-    this.textLinesByUriDictionary = {};
   }
 }

@@ -1,41 +1,9 @@
 import * as vscode from 'vscode';
-import { ElementDetail, InfoFromComment, IGetOriginalSymbols } from '../types';
-import { SymbolSearcherByWrapperDescription } from '../searchers/symbol-searcher-by-wrapper';
-import { ResourceEntityOrReport, ResourceModuleOrSolution } from './resources-construct';
-
-/**
- * Создать объект в зависимости от его типа.
- * @param infoFromComment Uri из href-комментария.
- * @param symbol Описание.
- * @returns Возвращается созданный в зависимости от описания объект.
- */
-export function createWrapperConstruct(infoFromComment: InfoFromComment, symbol: ElementDetail): IGetOriginalSymbols {
-  switch (symbol.container.kind) {
-    case vscode.SymbolKind.Method: {
-      return symbol.parent.endsWith('Resources')
-        ? symbol.uri.fsPath.endsWith('Module.g.cs')
-          ? new ResourceModuleOrSolution(symbol)
-          : new ResourceEntityOrReport(symbol)
-        : new Function(infoFromComment, symbol);
-    }
-    case vscode.SymbolKind.Property: {
-      return symbol.parent.endsWith('Resources')
-        ? symbol.uri.fsPath.endsWith('Module.g.cs')
-          ? new ResourceModuleOrSolution(symbol)
-          : new ResourceEntityOrReport(symbol)
-        : new Property(infoFromComment.uri, symbol);
-    }
-    case vscode.SymbolKind.Interface: {
-      return new Structure(infoFromComment.uri, symbol);
-    }
-    default: {
-      return new ProgrammingConstruct(infoFromComment.uri, symbol);
-    }
-  }
-}
+import { ElementDetail, InfoFromComment, IGetOriginalSymbols, SupportUriFromComment } from '../types';
+import { SymbolSearcherByHrefComment } from '../searchers/symbol-searcher-by-wrapper';
 
 /** Описание программной конструкции. */
-export class ProgrammingConstruct implements IGetOriginalSymbols {
+export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFromComment {
   /** Вид. */
   protected kind: vscode.SymbolKind;
 
@@ -46,7 +14,29 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
   public detail: string;
 
   /** Uri из комментария. */
-  public uriFromComment: vscode.Uri | null;
+  public uriFromComment: vscode.Uri;
+
+  /**
+   * Создать объект в зависимости от его типа.
+   * @param symbol Описание.
+   * @returns Возвращается созданный в зависимости от описания объект.
+   */
+  public static Create(infoFromComment: InfoFromComment, symbol: ElementDetail): IGetOriginalSymbols {
+    switch (symbol.container.kind) {
+      case vscode.SymbolKind.Method: {
+        return new Function(infoFromComment, symbol);
+      }
+      case vscode.SymbolKind.Property: {
+        return new Property(infoFromComment.uri!, symbol);
+      }
+      case vscode.SymbolKind.Interface: {
+        return new Structure(infoFromComment.uri!, symbol);
+      }
+      default: {
+        return new ProgrammingConstruct(infoFromComment.uri!, symbol);
+      }
+    }
+  }
 
   /** Проверить равенство по именам. */
   protected isNameEqual(element: ElementDetail): boolean {
@@ -68,7 +58,7 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
    * @param uriFromComment Uri из href-комментария.
    * @param symbol Элемент с дополнительной информацией.
    */
-  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
+  constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
@@ -79,7 +69,7 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  public IsEqual(element: ElementDetail): boolean {
+  public isEqual(element: ElementDetail): boolean {
     return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
@@ -101,9 +91,9 @@ export class ProgrammingConstruct implements IGetOriginalSymbols {
    * @param wrapperDescription Определение из обертки, на основе которого ищем описание.
    * @returns Массив с детальными описаниями.
    */
-  public async getOriginalSymbolByHrefComment(wrapperDescription: ProgrammingConstruct): Promise<vscode.Location[]> {
-    if (wrapperDescription.uriFromComment) {
-      const local = new SymbolSearcherByWrapperDescription(wrapperDescription.uriFromComment, wrapperDescription);
+  public async getOriginalSymbolByHrefComment(wrapperDescription: SupportUriFromComment): Promise<vscode.Location[]> {
+    const local = new SymbolSearcherByHrefComment(wrapperDescription);
+    if (local) {
       const symbols = await local.getSymbols();
       if (Array.isArray(symbols)) {
         return symbols;
@@ -138,7 +128,7 @@ class Property extends ProgrammingConstruct {
     }
   }
 
-  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
+  constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
     super(uriFromComment, symbol);
     this.parent = symbol.parent;
   }
@@ -198,7 +188,7 @@ class Structure extends ProgrammingConstruct {
     );
   }
 
-  constructor(uriFromComment: vscode.Uri | null, symbol: ElementDetail) {
+  constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
     super(uriFromComment, symbol);
     this.addTokensForSearch();
   }
@@ -283,7 +273,7 @@ class Function extends ProgrammingConstruct {
   }
 
   constructor(infoFromComment: InfoFromComment, symbol: ElementDetail) {
-    super(infoFromComment.uri, symbol);
+    super(infoFromComment.uri!, symbol);
     this.isInjection = infoFromComment.isInjection;
   }
 }

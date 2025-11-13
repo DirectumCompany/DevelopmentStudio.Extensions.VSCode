@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher-base';
-import { createWrapperConstruct } from './constructs/programming-construct';
-import { InfoFromComment, IGetOriginalSymbols, ElementDetail } from './types';
+import { InfoFromComment, IGetOriginalSymbols, ElementDetail, createWrapperConstruct } from './types';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
@@ -160,8 +159,7 @@ class SymbolSearcherByTokenAndRange extends SymbolSearcher {
    * @param range Диапазон для поиска.
    */
   constructor(uri: vscode.Uri, token: string, range: vscode.Range) {
-    super();
-    this.documentUri = [uri];
+    super(uri);
     this.token = token;
     this.range = range;
     this.needOnlyOneResult = true;

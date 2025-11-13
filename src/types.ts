@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import { ProgrammingConstruct } from './constructs/programming-construct';
+import { Resources } from './constructs/resources-construct';
 
 /** Детальное описание элемента. */
 export type ElementDetail = {
@@ -37,3 +39,28 @@ export interface IGetSymbols {
 export type TextLinesByUri = {
   [uri: string]: string[];
 };
+
+/**
+ * Тип с поддержкой Uri из комментария.
+ */
+export type SupportUriFromComment = {
+  uriFromComment: vscode.Uri;
+  isEqual(element: ElementDetail): boolean;
+};
+
+/**
+ * Создать объект в зависимости от его описания.
+ * @param infoFromComment Uri из href-комментария.
+ * @param symbol Описание.
+ * @returns Возвращается созданный в зависимости от описания объект.
+ */
+export function createWrapperConstruct(
+  infoFromComment: InfoFromComment,
+  symbol: ElementDetail,
+): IGetOriginalSymbols | null {
+  if (infoFromComment.uri) {
+    return ProgrammingConstruct.Create(infoFromComment, symbol);
+  } else {
+    return Resources.Create(symbol);
+  }
+}
