@@ -33,26 +33,6 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   }
 
   /**
-   * Вернуть массив uri, в которых надо искать.
-   * @param uri Исходный uri.
-   * @returns Массив uri.
-   */
-  public getUris(uri: vscode.Uri): vscode.Uri[] {
-    const uris: vscode.Uri[] = [];
-    const resourcesLanguageDefault = vscode.workspace.getConfiguration().get<string>('sungero.resourseLanguageDefault');
-    const filePaths: string[] =
-      resourcesLanguageDefault == 'en'
-        ? [uri.fsPath.replace('g.cs', 'resx'), uri.fsPath.replace('g.cs', 'ru.resx')]
-        : [uri.fsPath.replace('g.cs', 'ru.resx'), uri.fsPath.replace('g.cs', 'resx')];
-    for (const filePath of filePaths) {
-      if (fs.existsSync(filePath)) {
-        uris.push(vscode.Uri.file(filePath));
-      }
-    }
-    return uris;
-  }
-
-  /**
    * Проверить, что переданная строка содержит имя искомой ресурсной строки.
    * @param line Строка, в которой будет проводиться поиск.
    * @returns true - если строка содержит ресрную строку, иначе false.
@@ -110,13 +90,33 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
    * @param location Исходное расположение элемента.
    * @returns Uri файлов, где расположена реализация.
    */
-  private async getUriFromImplementation(location: vscode.Location): Promise<vscode.Uri> {
+  private async getUriFromImplementation(location: vscode.Location): Promise<vscode.Uri[]> {
     const currentImplementations = await VSCodeApi.getImplementations(location.uri, location.range.start);
     if (currentImplementations.length > 0) {
       const currentImplementation = currentImplementations.pop()!;
-      return currentImplementation.uri;
+      return this.getUris(currentImplementation.uri);
     }
-    return location.uri;
+    return [location.uri];
+  }
+
+  /**
+   * Вернуть массив uri, в которых надо искать.
+   * @param uri Исходный uri.
+   * @returns Массив uri.
+   */
+  private getUris(uri: vscode.Uri): vscode.Uri[] {
+    const uris: vscode.Uri[] = [];
+    const resourcesLanguageDefault = vscode.workspace.getConfiguration().get<string>('sungero.resourseLanguageDefault');
+    const filePaths: string[] =
+      resourcesLanguageDefault === 'en'
+        ? [uri.fsPath.replace('g.cs', 'resx'), uri.fsPath.replace('g.cs', 'ru.resx')]
+        : [uri.fsPath.replace('g.cs', 'ru.resx'), uri.fsPath.replace('g.cs', 'resx')];
+    for (const filePath of filePaths) {
+      if (fs.existsSync(filePath)) {
+        uris.push(vscode.Uri.file(filePath));
+      }
+    }
+    return uris;
   }
 }
 

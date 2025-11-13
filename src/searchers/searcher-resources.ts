@@ -8,25 +8,25 @@ export class ResourcesSearcher implements IGetSymbols {
   protected wrapperDescription: ResourceEntityOrReport;
 
   /** Uri документа. */
-  protected documentUri?: vscode.Uri[];
+  protected documentUris: vscode.Uri[];
 
   /** Словарь строк документа по Uri. */
   private textLinesByUriDictionary: TextLinesByUri;
 
   /**
    * Конструктор.
-   * @param uri Uri документа.
+   * @param uris Массив Uri документов.
    * @param wrapperDescription Описание программной конструкции.
    */
-  public constructor(uri: vscode.Uri, wrapperDescription: ResourceEntityOrReport) {
+  public constructor(uris: vscode.Uri[], wrapperDescription: ResourceEntityOrReport) {
     this.wrapperDescription = wrapperDescription;
-    this.documentUri = wrapperDescription.getUris(uri);
+    this.documentUris = uris;
     this.textLinesByUriDictionary = {};
   }
 
   public async getSymbols(): Promise<vscode.Location[]> {
     const result: vscode.Location[] = [];
-    for (const currentUri of this.documentUri!) {
+    for (const currentUri of this.documentUris) {
       const symbolRange = await this.GetRange(currentUri);
       if (symbolRange) {
         result.push({
