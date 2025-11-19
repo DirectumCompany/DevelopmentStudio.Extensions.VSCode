@@ -74,9 +74,9 @@ export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFrom
   }
 
   /**
-   * Вернуть массив uri, в которых надо искать.
-   * @param uri Исходный uri.
-   * @returns Массив uri.
+   * Вернуть массив Uri, в которых надо искать.
+   * @param uri Исходный Uri.
+   * @returns Массив Uri.
    */
   public getUris(uri: vscode.Uri): vscode.Uri[] {
     return [uri];

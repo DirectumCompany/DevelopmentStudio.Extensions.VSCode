@@ -5,7 +5,13 @@ import { ElementDetail, IGetOriginalSymbols } from '../types';
 import { ResourcesSearcher } from '../searchers/searcher-resources';
 import { DocumentSymbolLoader } from '../symbol-loader';
 
+/** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
+  /**
+   * Создать объект в зависимости от его типа.
+   * @param symbol Описание.
+   * @returns Возвращается созданный в зависимости от описания объект или null, если описание не подошло под условия создания.
+   */
   public static Create(symbol: ElementDetail): IGetOriginalSymbols | null {
     if (
       symbol.parent.endsWith('Resources') &&
@@ -24,6 +30,10 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   /** Имя. */
   public name: string;
 
+  /**
+   * Конструктор.
+   * @param symbol Элемент с дополнительной информацией.
+   */
   public constructor(symbol: ElementDetail) {
     this.name = symbol.container.name.replace(/(\w*)Format/, '$1');
   }
@@ -35,7 +45,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   /**
    * Проверить, что переданная строка содержит имя искомой ресурсной строки.
    * @param line Строка, в которой будет проводиться поиск.
-   * @returns true - если строка содержит ресрную строку, иначе false.
+   * @returns true - если строка содержит ресурсную строку, иначе false.
    */
   public isEqual(line: string): boolean {
     return line.trim().startsWith(`<data name="${this.name}"`);
@@ -44,7 +54,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   /**
    * Вернуть {@link vscode.Location расположение} и описание элемента.
    * @param sourceLocation Исходное расположение.
-   * @returns Расположение и описание элемента или null.
+   * @returns Расположение и описание элемента или null, если расположение найти не удалось.
    */
   protected async getLocationAndWrapperProgrammingConstruct(sourceLocation: vscode.Location): Promise<{
     location: vscode.Location;
@@ -62,7 +72,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
     let originalSymbols: vscode.Location[] = [];
     const data = await this.getLocationAndWrapperProgrammingConstruct(sourceLocation);
     if (data) {
-      originalSymbols = await this.getResourceString(data.location, data.wrapperProgrammingConstruct);
+      originalSymbols = await this.getResourceStringLocations(data.location, data.wrapperProgrammingConstruct);
     }
     return Promise.resolve(originalSymbols);
   }
@@ -70,15 +80,15 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   /**
    * Вернуть расположения ресурсной строки.
    * @param location Исходное {@link vscode.Location местоположение}.
-   * @param wrapperDescription {@link ProgrammingConstruct Определение} из обертки, на основе которого ищем описание.
+   * @param wrapperDescription {@link ResourceEntityOrReport Определение} из обертки, на основе которого ищем описание.
    * @returns Массив с {@link vscode.Location расположениями}.
    */
-  private async getResourceString(
+  private async getResourceStringLocations(
     location: vscode.Location,
     wrapperDescription: ResourceEntityOrReport,
   ): Promise<vscode.Location[]> {
     const result = [];
-    const documentUri = await this.getUriFromImplementation(location);
+    const documentUri = await this.getImplementationUris(location);
     const local = new ResourcesSearcher(documentUri, wrapperDescription);
     const symbols = await local.getSymbols();
     result.push(...symbols);
@@ -90,7 +100,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
    * @param location Исходное расположение элемента.
    * @returns Uri файлов, где расположена реализация.
    */
-  private async getUriFromImplementation(location: vscode.Location): Promise<vscode.Uri[]> {
+  private async getImplementationUris(location: vscode.Location): Promise<vscode.Uri[]> {
     const currentImplementations = await VSCodeApi.getImplementations(location.uri, location.range.start);
     if (currentImplementations.length > 0) {
       const currentImplementation = currentImplementations.pop()!;
@@ -100,9 +110,9 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   }
 
   /**
-   * Вернуть массив uri, в которых надо искать.
-   * @param uri Исходный uri.
-   * @returns Массив uri.
+   * Вернуть массив Uri, в которых надо искать.
+   * @param uri Исходный Uri.
+   * @returns Массив Uri.
    */
   private getUris(uri: vscode.Uri): vscode.Uri[] {
     const uris: vscode.Uri[] = [];
@@ -125,6 +135,10 @@ class ResourceModuleOrSolution extends ResourceEntityOrReport {
   /** Детальное описание элемента. */
   protected symbol: ElementDetail;
 
+  /**
+   * Конструктор.
+   * @param symbol Элемент с дополнительной информацией.
+   */
   public constructor(symbol: ElementDetail) {
     super(symbol);
     this.symbol = symbol;
@@ -146,10 +160,10 @@ class ResourceModuleOrSolution extends ResourceEntityOrReport {
 
   /**
    * Вернуть местоположение последней реализации.
-   * @returns Местоположение последней реализации или null.
+   * @returns Местоположение последней реализации или null, если реализацию найти не удалось.
    */
   private async getLastImplementLocation(): Promise<vscode.Location | null> {
-    const locations = await this.getImplement();
+    const locations = await this.getImplements();
     if (locations.length > 0) {
       return locations.pop()!;
     }
@@ -160,8 +174,8 @@ class ResourceModuleOrSolution extends ResourceEntityOrReport {
    * Вернуть расположения реализации.
    * @returns Массив расположений реализации.
    */
-  private async getImplement(): Promise<vscode.Location[]> {
-    const newPosition = await this.getPostitonDiff();
+  private async getImplements(): Promise<vscode.Location[]> {
+    const newPosition = await this.getPositionDiff();
     const position = new vscode.Position(
       this.symbol.container.range.start.line + newPosition.lineOffset,
       newPosition.characterStart,
@@ -173,7 +187,7 @@ class ResourceModuleOrSolution extends ResourceEntityOrReport {
    * Вернуть смещение строки и позицию.
    * @returns Смещение строки и позиция.
    */
-  private async getPostitonDiff(): Promise<{ lineOffset: number; characterStart: number }> {
+  private async getPositionDiff(): Promise<{ lineOffset: number; characterStart: number }> {
     const ReturnResourceString = 'return resources.';
     const block = await this.getBlockCode();
     const index = block.findIndex((item) => item.includes(ReturnResourceString));

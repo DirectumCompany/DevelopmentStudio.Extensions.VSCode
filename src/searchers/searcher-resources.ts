@@ -41,7 +41,7 @@ export class ResourcesSearcher implements IGetSymbols {
   /**
    * Получить диапазон ресурсной строки.
    * @param uri Uri, где надо вести поиск.
-   * @returns Диапазон найденной строки или null.
+   * @returns Диапазон найденной строки или null, если строку найти не удалось.
    */
   private async GetRange(uri: vscode.Uri): Promise<vscode.Range | null> {
     const textLines = await this.getTextLinesByUri(uri);

@@ -33,15 +33,15 @@ export abstract class SymbolSearcher implements IGetSymbols {
     container: vscode.DocumentSymbol,
     findResult: vscode.DocumentSymbol[],
   ): Promise<boolean> {
-    let tokenFinded = false;
+    let tokenFound = false;
     let tokenFindedInChilds = false;
 
     if (await this.needGetSymbol(uri, container)) {
       findResult.push(container);
-      tokenFinded = true;
+      tokenFound = true;
     }
 
-    if (!(this.needOnlyOneResult && tokenFinded)) {
+    if (!(this.needOnlyOneResult && tokenFound)) {
       for (const element of container.children) {
         const iterateTokenFindedInChild = await this.findSymbol(uri, element, findResult);
         tokenFindedInChilds = iterateTokenFindedInChild || tokenFindedInChilds;
@@ -50,7 +50,7 @@ export abstract class SymbolSearcher implements IGetSymbols {
         }
       }
     }
-    return Promise.resolve(tokenFinded || tokenFindedInChilds);
+    return Promise.resolve(tokenFound || tokenFindedInChilds);
   }
 
   public async getSymbols(): Promise<ElementDetail | vscode.Location[]> {

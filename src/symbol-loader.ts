@@ -56,7 +56,7 @@ export class DocumentSymbolLoader {
    * @param documentUri Uri документа, в котором ищем описание.
    * @param tokens Токены поиска.
    * @param range Диапазон поиска.
-   * @returns Массив с детальными описаниями.
+   * @returns Детальное описание или null, если нашлось больше одного описания.
    */
   private async getSymbolsByToken(
     documentUri: vscode.Uri,
@@ -96,7 +96,7 @@ export class DocumentSymbolLoader {
   /**
    * Проверить, нужно ли загружать конструкцию.
    * @param uri Uri, который надо проверить.
-   * @returns true - если нужно загржуать, иначе false.
+   * @returns true - если нужно загружать, иначе false.
    */
   private static needLoadDocumentSymbol(uri: vscode.Uri): boolean {
     return uri.fsPath.endsWith('g.cs');
