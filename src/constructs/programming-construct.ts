@@ -73,15 +73,6 @@ export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFrom
     return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
-  /**
-   * Вернуть массив Uri, в которых надо искать.
-   * @param uri Исходный Uri.
-   * @returns Массив Uri.
-   */
-  public getUris(uri: vscode.Uri): vscode.Uri[] {
-    return [uri];
-  }
-
   public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
     return await this.getOriginalSymbolByHrefComment(this);
   }

@@ -20,7 +20,7 @@ export class SymbolSearcherByHrefComment extends SymbolSearcher {
     if (this.textLines.length === 0) {
       this.textLines = await VSCodeApi.loadDocumentLines(uri);
     }
-    return Promise.resolve(this.textLines[position.line]);
+    return Promise.resolve(position.line < this.textLines.length - 1 ? this.textLines[position.line] : '');
   }
 
   /**
