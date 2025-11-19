@@ -96,7 +96,7 @@ export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFrom
     if (local) {
       const symbols = await local.getSymbols();
       if (Array.isArray(symbols)) {
-        return symbols;
+        return Promise.resolve(symbols);
       }
     }
     return Promise.resolve([]);

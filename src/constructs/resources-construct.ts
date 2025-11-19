@@ -151,7 +151,7 @@ class ResourceModuleOrSolution extends ResourceEntityOrReport {
     const location = await this.getLastImplementLocation();
     if (location) {
       const wrapperProgrammingConstruct = await DocumentSymbolLoader.loadWrapperProgrammingConstruct(location);
-      if (wrapperProgrammingConstruct && wrapperProgrammingConstruct instanceof ResourceEntityOrReport) {
+      if (wrapperProgrammingConstruct instanceof ResourceEntityOrReport) {
         return { location, wrapperProgrammingConstruct };
       }
     }
