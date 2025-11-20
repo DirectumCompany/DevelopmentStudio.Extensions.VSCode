@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
+import path from 'path';
 import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, IGetOriginalSymbols } from '../types';
 import { ResourcesSearcher } from '../searchers/searcher-resources';
@@ -116,14 +117,25 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
    */
   private getUris(uri: vscode.Uri): vscode.Uri[] {
     const uris: vscode.Uri[] = [];
-    const resourcesLanguageDefault = vscode.workspace.getConfiguration().get<string>('sungero.resourseLanguageDefault');
-    const filePaths: string[] =
-      resourcesLanguageDefault === 'en'
-        ? [uri.fsPath.replace('g.cs', 'resx'), uri.fsPath.replace('g.cs', 'ru.resx')]
-        : [uri.fsPath.replace('g.cs', 'ru.resx'), uri.fsPath.replace('g.cs', 'resx')];
-    for (const filePath of filePaths) {
-      if (fs.existsSync(filePath)) {
-        uris.push(vscode.Uri.file(filePath));
+
+    const resourcesLanguageDefault = vscode.workspace
+      .getConfiguration()
+      .get<string>('sungero.resourseLanguageDefault')!;
+    const settingExtensionPairs = [
+      { setting: 'en', extension: '.resx' },
+      { setting: 'ru', extension: '.ru.resx' },
+    ];
+    settingExtensionPairs.sort((first) => (first.setting === resourcesLanguageDefault ? -1 : 1));
+
+    const sourcePath = uri.fsPath;
+    const checkedExtension = '.g.cs';
+    if (sourcePath.endsWith(checkedExtension)) {
+      const pathWithoutExtension = sourcePath.substring(0, sourcePath.length - checkedExtension.length);
+      const resourceFilePaths: string[] = settingExtensionPairs.map((item) => pathWithoutExtension + item.extension);
+      for (const filePath of resourceFilePaths) {
+        if (fs.existsSync(filePath)) {
+          uris.push(vscode.Uri.file(filePath));
+        }
       }
     }
     return uris;
