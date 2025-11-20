@@ -22,35 +22,27 @@ export abstract class SymbolSearcher implements IGetSymbols {
   protected abstract needGetSymbol(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<boolean>;
 
   /**
-   * Найти описание.
+   * Найти описания.
    * @param uri Uri документа, в котором ищем.
    * @param container Контейнер.
-   * @param findResult Список найденных описаний.
-   * @returns true - если описание найдено, иначе false.
+   * @returns Массив найденных описаний.
    */
-  private async findSymbol(
-    uri: vscode.Uri,
-    container: vscode.DocumentSymbol,
-    findResult: vscode.DocumentSymbol[],
-  ): Promise<boolean> {
-    let tokenFound = false;
-    let tokenFindedInChilds = false;
+  private async findSymbols(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<vscode.DocumentSymbol[]> {
+    const foundSymbols: vscode.DocumentSymbol[] = [];
 
     if (await this.needGetSymbol(uri, container)) {
-      findResult.push(container);
-      tokenFound = true;
+      foundSymbols.push(container);
     }
 
-    if (!(this.needOnlyOneResult && tokenFound)) {
+    if (!(this.needOnlyOneResult && foundSymbols.length > 0)) {
       for (const element of container.children) {
-        const iterateTokenFindedInChild = await this.findSymbol(uri, element, findResult);
-        tokenFindedInChilds = iterateTokenFindedInChild || tokenFindedInChilds;
-        if (this.needOnlyOneResult && iterateTokenFindedInChild) {
+        foundSymbols.push(...(await this.findSymbols(uri, element)));
+        if (this.needOnlyOneResult && foundSymbols.length > 0) {
           break;
         }
       }
     }
-    return Promise.resolve(tokenFound || tokenFindedInChilds);
+    return Promise.resolve(foundSymbols);
   }
 
   public async getSymbols(): Promise<ElementDetail | vscode.Location[]> {
@@ -63,16 +55,14 @@ export abstract class SymbolSearcher implements IGetSymbols {
       for (const symbol of symbols) {
         this.parent = symbol.name;
 
-        let findResult: vscode.DocumentSymbol[] = [];
-        if (await this.findSymbol(uri, symbol, findResult)) {
-          result.push(
-            ...findResult.map((element) => ({
-              container: element,
-              parent: this.parent!,
-              uri: uri,
-            })),
-          );
-        }
+        const foundSymbols: vscode.DocumentSymbol[] = await this.findSymbols(uri, symbol);
+        result.push(
+          ...foundSymbols.map((element) => ({
+            container: element,
+            parent: this.parent!,
+            uri: uri,
+          })),
+        );
 
         if (this.needOnlyOneResult && result.length) {
           break;
