@@ -3,18 +3,18 @@ import { ProgrammingConstruct } from './constructs/programming-construct';
 import { Resources } from './constructs/resources-construct';
 
 /** Детальное описание элемента. */
-export type ElementDetail = {
+export interface ElementDetail {
   container: vscode.DocumentSymbol;
   parent: string;
   uri: vscode.Uri;
   textLine?: string;
-};
+}
 
 /** Информация из комментария. */
-export type InfoFromComment = {
+export interface InfoFromComment {
   uri: vscode.Uri | null;
   isInjection: boolean;
-};
+}
 
 /** Интерфейс получения оригинальных определений. */
 export interface IGetOriginalSymbols {
@@ -36,14 +36,14 @@ export interface IGetSymbols {
 }
 
 /** Словарь со списком строк с ключом по uri. */
-export type TextLinesByUri = {
+export interface TextLinesByUri {
   [uri: string]: string[];
-};
+}
 
 /**
  * Тип с поддержкой Uri из комментария.
  */
-export type SupportUriFromComment = {
+export interface SupportUriFromComment {
   uriFromComment: vscode.Uri;
   isEqual(element: ElementDetail): boolean;
 };
