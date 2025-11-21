@@ -1,10 +1,8 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
-import path from 'path';
 import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, IGetOriginalSymbols } from '../types';
 import { ResourcesSearcher } from '../searchers/searcher-resources';
-import { DocumentSymbolLoader } from '../symbol-loader';
 
 /** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
@@ -40,7 +38,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   }
 
   public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
-    return await this.getOriginalSymbolResourceString(sourceLocation);
+    return await this.getResourceStringLocations(sourceLocation);
   }
 
   /**
@@ -53,69 +51,90 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   }
 
   /**
-   * Вернуть {@link vscode.Location расположение} и описание элемента.
+   * Вернуть {@link vscode.Location расположение}.
    * @param sourceLocation Исходное расположение.
-   * @returns Расположение и описание элемента или null, если расположение найти не удалось.
+   * @returns Расположение.
    */
-  protected async getLocationAndWrapperProgrammingConstruct(sourceLocation: vscode.Location): Promise<{
-    location: vscode.Location;
-    wrapperProgrammingConstruct: ResourceEntityOrReport;
-  } | null> {
-    return Promise.resolve({ location: sourceLocation, wrapperProgrammingConstruct: this });
-  }
-
-  /**
-   * Вернуть расположение ресурсной строки.
-   * @param sourceLocation Исходное {@link vscode.Location местоположение}.
-   * @returns Массив {@link vscode.Location расположений}.
-   */
-  private async getOriginalSymbolResourceString(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
-    let originalSymbols: vscode.Location[] = [];
-    const data = await this.getLocationAndWrapperProgrammingConstruct(sourceLocation);
-    if (data) {
-      originalSymbols = await this.getResourceStringLocations(data.location, data.wrapperProgrammingConstruct);
-    }
-    return Promise.resolve(originalSymbols);
+  protected async getLocation(sourceLocation: vscode.Location): Promise<vscode.Location> {
+    return Promise.resolve(sourceLocation);
   }
 
   /**
    * Вернуть расположения ресурсной строки.
-   * @param location Исходное {@link vscode.Location местоположение}.
-   * @param wrapperDescription {@link ResourceEntityOrReport Определение} из обертки, на основе которого ищем описание.
+   * @param sourceLocation Исходное {@link vscode.Location расположение}.
    * @returns Массив с {@link vscode.Location расположениями}.
    */
-  private async getResourceStringLocations(
-    location: vscode.Location,
-    wrapperDescription: ResourceEntityOrReport,
-  ): Promise<vscode.Location[]> {
+  private async getResourceStringLocations(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
     const result = [];
-    const documentUri = await this.getImplementationUris(location);
-    const local = new ResourcesSearcher(documentUri, wrapperDescription);
+    const documentUris = await this.getSearchUris(sourceLocation);
+    const local = new ResourcesSearcher(documentUris, this);
     const symbols = await local.getSymbols();
     result.push(...symbols);
     return Promise.resolve(result);
   }
 
   /**
-   * Вернуть Uri файлов, где расположена реализация элемента.
-   * @param location Исходное расположение элемента.
-   * @returns Uri файлов, где расположена реализация.
+   * Вернуть массив Uri для поиска элемента.
+   * @param sourceLocation Исходное {@link vscode.Location расположение}.
+   * @returns Массив Uri для поиска элемента.
    */
-  private async getImplementationUris(location: vscode.Location): Promise<vscode.Uri[]> {
+  private async getSearchUris(sourceLocation: vscode.Location): Promise<vscode.Uri[]> {
+    const location = await this.getLocation(sourceLocation);
     const currentImplementations = await VSCodeApi.getImplementations(location.uri, location.range.start);
     if (currentImplementations.length > 0) {
-      const currentImplementation = currentImplementations.pop()!;
-      return this.getUris(currentImplementation.uri);
+      const currentImplementation =
+        this.getNearestLocation(sourceLocation, currentImplementations) ?? currentImplementations.pop()!;
+      return this.getResourcesUris(currentImplementation.uri);
     }
     return [location.uri];
   }
 
   /**
-   * Вернуть массив Uri, в которых надо искать.
-   * @param uri Исходный Uri.
-   * @returns Массив Uri.
+   * Получить ближайшее {@link vscode.Location расположение}.
+   * @param location {@link vscode.Location Расположение}, рядом с которым ищем.
+   * @param implementations Массив {@link vscode.Location расположений}, в которых ищем.
+   * @returns Ближайшее {@link vscode.Location расположение}.
    */
-  private getUris(uri: vscode.Uri): vscode.Uri[] {
+  private getNearestLocation(location: vscode.Location, implementations: vscode.Location[]): vscode.Location | null {
+    function commonPrefixLength(a: string, b: string): number {
+      const len = Math.min(a.length, b.length);
+      let i: number;
+      for (i = 0; i < len; i++) {
+        if (a.charCodeAt(i) !== b.charCodeAt(i)) {
+          return i;
+        }
+      }
+      return len;
+    }
+
+    const nearest = implementations
+      .map((value, index) => {
+        return {
+          index,
+          prefixLen: commonPrefixLength(value.uri.toString().toLowerCase(), location.uri.toString().toLowerCase()),
+        };
+      })
+      .sort((a, b) => {
+        if (a.prefixLen > b.prefixLen) {
+          return -1;
+        } else if (a.prefixLen < b.prefixLen) {
+          return 1;
+        } else {
+          return 0;
+        }
+      })[0];
+    if (nearest) {
+      return implementations[nearest.index];
+    }
+    return null;
+  }
+
+  /**
+   * Вернуть массив Uri ресурсных файлов.
+   * @param uri Исходный Uri.
+   * @returns Массив Uri ресурсных файлов.
+   */
+  private getResourcesUris(uri: vscode.Uri): vscode.Uri[] {
     const uris: vscode.Uri[] = [];
 
     const resourcesLanguageDefault = vscode.workspace
@@ -156,43 +175,17 @@ class ResourceModuleOrSolution extends ResourceEntityOrReport {
     this.symbol = symbol;
   }
 
-  protected async getLocationAndWrapperProgrammingConstruct(sourceLocation: vscode.Location): Promise<{
-    location: vscode.Location;
-    wrapperProgrammingConstruct: ResourceEntityOrReport;
-  } | null> {
-    const location = await this.getLastImplementLocation();
-    if (location) {
-      const wrapperProgrammingConstruct = await DocumentSymbolLoader.loadWrapperProgrammingConstruct(location);
-      if (wrapperProgrammingConstruct instanceof ResourceEntityOrReport) {
-        return { location, wrapperProgrammingConstruct };
-      }
+  protected async getLocation(sourceLocation: vscode.Location): Promise<vscode.Location> {
+    try {
+      const newPosition = await this.getPositionDiff();
+      const position = new vscode.Position(
+        this.symbol.container.range.start.line + newPosition.lineOffset,
+        newPosition.characterStart,
+      );
+      return new vscode.Location(this.symbol.uri, position);
+    } catch {
+      return sourceLocation;
     }
-    return null;
-  }
-
-  /**
-   * Вернуть местоположение последней реализации.
-   * @returns Местоположение последней реализации или null, если реализацию найти не удалось.
-   */
-  private async getLastImplementLocation(): Promise<vscode.Location | null> {
-    const locations = await this.getImplements();
-    if (locations.length > 0) {
-      return locations.pop()!;
-    }
-    return null;
-  }
-
-  /**
-   * Вернуть расположения реализации.
-   * @returns Массив расположений реализации.
-   */
-  private async getImplements(): Promise<vscode.Location[]> {
-    const newPosition = await this.getPositionDiff();
-    const position = new vscode.Position(
-      this.symbol.container.range.start.line + newPosition.lineOffset,
-      newPosition.characterStart,
-    );
-    return await VSCodeApi.getDefinitions(this.symbol.uri, position);
   }
 
   /**
