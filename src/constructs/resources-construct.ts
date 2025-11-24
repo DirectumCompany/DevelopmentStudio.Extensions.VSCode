@@ -117,11 +117,8 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
       .sort((a, b) => {
         if (a.prefixLen > b.prefixLen) {
           return -1;
-        } else if (a.prefixLen < b.prefixLen) {
-          return 1;
-        } else {
-          return 0;
         }
+        return a.prefixLen < b.prefixLen ? 1 : 0;
       })[0];
     if (nearest) {
       return implementations[nearest.index];
