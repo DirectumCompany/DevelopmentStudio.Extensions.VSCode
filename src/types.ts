@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ProgrammingConstruct } from './constructs/programming-construct';
 import { Resources } from './constructs/resources-construct';
+import { Queries } from './constructs/queries-construct';
 
 /** Детальное описание элемента. */
 export interface ElementDetail {
@@ -75,6 +76,6 @@ export function createWrapperConstruct(
   if (infoFromComment.uri) {
     return ProgrammingConstruct.Create(infoFromComment, symbol);
   } else {
-    return Resources.Create(symbol);
+    return Resources.Create(symbol) ?? Queries.Create(symbol);
   }
 }

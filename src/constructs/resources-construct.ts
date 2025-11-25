@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, SupportTextFormatSearch } from '../types';
-import { TextFormatSearcher } from '../searchers/searcher-resources';
+import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
 
 /** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
