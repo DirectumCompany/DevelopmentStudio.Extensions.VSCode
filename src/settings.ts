@@ -90,6 +90,11 @@ export async function addStatusBarCommand(context: vscode.ExtensionContext) {
       const currentValue: vscode.QuickPickItem = {
         label: vscode.workspace.getConfiguration().get<string>(setting.settingName)!,
       };
+      setting.items.forEach((item) => {
+        if (item.label === currentValue.label) {
+          item.description = `${item.description} - current value`;
+        }
+      });
       const choice = await vscode.window.showQuickPick<vscode.QuickPickItem>(setting.items, {
         canPickMany: false,
         placeHolder: setting.placeHolder,
@@ -101,19 +106,25 @@ export async function addStatusBarCommand(context: vscode.ExtensionContext) {
 
     let picks: SettingItem[] = [];
     const configurateResourceLanguageSettings: SettingItem = {
-      label: 'Configure resource language',
+      label: 'Configure Resource Language',
       setting: {
-        items: [{ label: 'en' }, { label: 'ru' }],
-        placeHolder: 'Select default language for resources show',
+        items: [
+          { label: 'en', description: '*.resx' },
+          { label: 'ru', description: '*.ru.resx' },
+        ],
+        placeHolder: 'Select Default Resources Language',
         settingName: resourceSettingName,
       },
     };
     picks.push(configurateResourceLanguageSettings);
     const configurateQueryTypeSettings: SettingItem = {
-      label: 'Configure query type',
+      label: 'Configure Query Type',
       setting: {
-        items: [{ label: 'postgresql' }, { label: 'mssql' }],
-        placeHolder: 'Select default query type',
+        items: [
+          { label: 'postgresql', description: '*_postgresql.sql' },
+          { label: 'mssql', description: '*_mssql.sql' },
+        ],
+        placeHolder: 'Select Default Query Type',
         settingName: queryTypeSettingName,
       },
     };
