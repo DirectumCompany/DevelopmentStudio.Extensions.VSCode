@@ -5,9 +5,15 @@ import { Resources } from './constructs/resources-construct';
 /** Детальное описание элемента. */
 export interface ElementDetail {
   container: vscode.DocumentSymbol;
-  parent: string;
+  parent: NameAndDetail;
   uri: vscode.Uri;
   textLine?: string;
+}
+
+/** Описание с именем и детальными данными. */
+export interface NameAndDetail {
+  name: string;
+  detail: string;
 }
 
 /** Информация из комментария. */

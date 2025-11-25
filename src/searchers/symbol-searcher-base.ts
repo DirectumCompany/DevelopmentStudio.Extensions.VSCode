@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
-import { ElementDetail, IGetSymbols } from '../types';
+import { ElementDetail, IGetSymbols, NameAndDetail } from '../types';
 
 /** Поисковик описания. */
 export abstract class SymbolSearcher implements IGetSymbols {
   /** Имя предка. */
-  protected parent?: string;
+  protected parent?: NameAndDetail;
 
   /** Признак, что нужен только один результат. */
   protected needOnlyOneResult: boolean = false;
@@ -53,7 +53,7 @@ export abstract class SymbolSearcher implements IGetSymbols {
 
     if (symbols && symbols.length > 0) {
       for (const symbol of symbols) {
-        this.parent = symbol.name;
+        this.parent = { name: symbol.name, detail: symbol.detail };
 
         const foundSymbols: vscode.DocumentSymbol[] = await this.findSymbols(uri, symbol);
         result.push(

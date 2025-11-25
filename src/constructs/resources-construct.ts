@@ -13,7 +13,7 @@ export class Resources {
    */
   public static Create(symbol: ElementDetail): IGetOriginalSymbols | null {
     if (
-      symbol.parent.endsWith('Resources') &&
+      symbol.parent.name.endsWith('Resources') &&
       [vscode.SymbolKind.Method, vscode.SymbolKind.Property].includes(symbol.container.kind)
     ) {
       return symbol.uri.fsPath.endsWith('Module.g.cs')
