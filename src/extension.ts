@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AdditionalDefinitionProvider, resourcesOpensInPeekCommand } from './definition-provider';
+import { AdditionalDefinitionProvider, opensInPeekCommand } from './definition-provider';
 import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';
 
 /**
@@ -26,16 +26,15 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposable);
 
-  const disposableCommand = vscode.commands.registerCommand('sungero.resourcesOpensInPeek', () => {
+  const disposableCommand = vscode.commands.registerCommand('sungero.opensInPeek', () => {
     const activeEditor = vscode.window.activeTextEditor;
     if (activeEditor) {
-      resourcesOpensInPeekCommand(activeEditor.document, activeEditor.selection.active);
+      opensInPeekCommand(activeEditor.document, activeEditor.selection.active);
     }
   });
   context.subscriptions.push(disposableCommand);
 
   await addStatusBarCommand(context);
 }
-
 
 export function deactivate() {}

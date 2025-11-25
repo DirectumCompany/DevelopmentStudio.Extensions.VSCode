@@ -59,14 +59,14 @@
     ],
     "commands": [
       {
-        "command": "sungero.resourcesOpensInPeek",
-        "title": "Show peek view of the resources",
+        "command": "sungero.opensInPeek",
+        "title": "Show peek view of the results",
         "category": "Sungero"
       }
     ],
     "keybindings": [
       {
-        "command": "sungero.resourcesOpensInPeek",
+        "command": "sungero.opensInPeek",
         "key": "Ctrl+Alt+R",
         "when": "(editorLangId == csharp) && editorTextFocus"
       }
