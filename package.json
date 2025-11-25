@@ -37,6 +37,24 @@
             "default": "en"
           }
         }
+      },
+      {
+        "title": "Sungero",
+        "properties": {
+          "sungero.queryTypeDefault": {
+            "type": "string",
+            "enumItemLabels": [
+              "postgres",
+              "mssql"
+            ],
+            "enum": [
+              "postgres",
+              "mssql"
+            ],
+            "description": "Предпочтительный тип запроса.",
+            "default": "postgres"
+          }
+        }
       }
     ],
     "commands": [
