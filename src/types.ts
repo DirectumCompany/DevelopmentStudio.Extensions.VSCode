@@ -52,7 +52,15 @@ export interface TextLinesByUri {
 export interface SupportUriFromComment {
   uriFromComment: vscode.Uri;
   isEqual(element: ElementDetail): boolean;
-};
+}
+
+/**
+ * Интерфейс получения оригинальных определений с поддержкой поиска в текстовом формате.
+ */
+export interface SupportTextFormatSearch extends IGetOriginalSymbols {
+  name: string;
+  isEqual(line: string): boolean;
+}
 
 /**
  * Создать объект в зависимости от его описания.
