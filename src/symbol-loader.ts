@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
-import { SymbolSearcher } from './symbol-searcher';
-import { ProgrammingConstruct } from './programming-construct';
+import { SymbolSearcher } from './searchers/symbol-searcher-base';
+import { InfoFromComment, IGetOriginalSymbols, ElementDetail, createWrapperConstruct } from './types';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
@@ -14,26 +14,20 @@ export class DocumentSymbolLoader {
   /** Массив строк документа. */
   private documentLines: string[];
 
-  /** Uri из href-комментария. */
-  public originalUri?: vscode.Uri | null;
-
-  /** Описание из враппера. */
-  public documentSymbol?: ProgrammingConstruct | null;
-
   /**
    * Вернуть ссылку на документ и признак инъекции из комментария.
-   * @returns Возвращает Uri на файл с описанием определения и признак инъекции или null.
+   * @returns Возвращает Uri на файл с описанием определения или null и признак инъекции.
    */
-  private async getInfoFromComment(): Promise<{ uri: vscode.Uri; isInjection: boolean } | null> {
+  private async getInfoFromComment(): Promise<InfoFromComment> {
     const regexHref = /\/\/\/\s*<see href="file:\/\/\/([^"]*)" internal=""( proxy="")? \/>/;
-    for (let lineNumber = this.range.start.line - 1; lineNumber > 0; lineNumber--) {
+    for (let lineNumber = this.range.start.line - 1; lineNumber > this.range.start.line - 10; lineNumber--) {
       const line = this.documentLines[lineNumber];
       const match = line.match(regexHref);
       if (match) {
         return Promise.resolve({ uri: vscode.Uri.file(match[1].toString()), isInjection: match[2]?.length > 0 });
       }
     }
-    return Promise.resolve(null);
+    return Promise.resolve({ uri: null, isInjection: false });
   }
 
   /**
@@ -46,54 +40,128 @@ export class DocumentSymbolLoader {
 
   /**
    * Вернуть определение из обертки.
-   * @param isInjection Признак, что определение - инъекция.
-   * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону.
+   * @param infoFromComment  {@link InfoFromComment Uri и признак инъекции}, полученные из комментария.
+   * @returns Определение из обертки, которое нашли в заданном файле по заданному диапазону или null.
    */
-  private async getWrapperDocumentSymbol(isInjection: boolean): Promise<ProgrammingConstruct | null> {
-    const token = this.getToken();
-    const symbolWrapper = await SymbolSearcher.getSymbols(this.uri, token, this.range);
-    const firstElementDetail = symbolWrapper.shift();
+  private async getWrapperDocumentSymbol(infoFromComment: InfoFromComment): Promise<IGetOriginalSymbols | null> {
+    const firstElementDetail = await this.getSymbolsByToken(this.uri, this.getToken(), this.range);
     if (firstElementDetail) {
-      firstElementDetail.isInjection = isInjection;
-      return Promise.resolve(ProgrammingConstruct.Create(firstElementDetail));
+      return Promise.resolve(createWrapperConstruct(infoFromComment, firstElementDetail));
     }
     return Promise.resolve(null);
   }
 
   /**
-   * Попытаться загрузить определение.
-   * @returns true - если загрузить определение удалось, иначе false.
+   * Вернуть описания по токену.
+   * @param documentUri Uri документа, в котором ищем описание.
+   * @param tokens Токены поиска.
+   * @param range Диапазон поиска.
+   * @returns Детальное описание или null, если нашлось больше одного описания.
    */
-  public async tryLoadDocumentSymbols(): Promise<boolean> {
-    if (this.needLoadDocumentSymbol()) {
-      this.documentLines = await VSCodeApi.loadDocumentLine(this.uri);
-      const infoFromComment = await this.getInfoFromComment();
-      if (infoFromComment) {
-        this.originalUri = infoFromComment.uri;
-        this.documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment.isInjection);
-        if (this.documentSymbol) {
-          return Promise.resolve(true);
-        }
-      }
-    }
-    return Promise.resolve(false);
+  private async getSymbolsByToken(
+    documentUri: vscode.Uri,
+    tokens: string,
+    range: vscode.Range,
+  ): Promise<ElementDetail | null> {
+    const local = new SymbolSearcherByTokenAndRange(documentUri, tokens, range!);
+    const symbol = await local.getSymbols();
+    return Promise.resolve(!Array.isArray(symbol) ? symbol : null);
   }
 
   /**
-   * Проверить, нужно ли загружать конструкцию.
-   * @returns true - если нужно загржуать, иначе false.
+   * Загрузить описание.
+   * @returns Загруженное описание или null.
    */
-  private needLoadDocumentSymbol(): boolean {
-    return this.uri.fsPath.endsWith('g.cs');
+  protected async loadDocumentSymbols(): Promise<IGetOriginalSymbols | null> {
+    const infoFromComment = await this.getInfoFromComment();
+    const documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment);
+    return Promise.resolve(documentSymbol);
+  }
+
+  /** Загрузить массив строк из документа. */
+  private async loadDocumentLines() {
+    this.documentLines = await VSCodeApi.loadDocumentLines(this.uri);
   }
 
   /**
    * Конструктор.
    * @param definition Определение.
    */
-  constructor(definition: vscode.Location) {
+  private constructor(definition: vscode.Location) {
     this.range = definition.range;
     this.uri = definition.uri;
     this.documentLines = [];
+  }
+
+  /**
+   * Проверить, нужно ли загружать конструкцию.
+   * @param uri Uri, который надо проверить.
+   * @returns true - если нужно загружать, иначе false.
+   */
+  private static needLoadDocumentSymbol(uri: vscode.Uri): boolean {
+    return uri.fsPath.endsWith('g.cs');
+  }
+
+  /**
+   * Попытаться создать и инициализировать загрузчик описания из враппера.
+   * @param definition Определение.
+   * @returns Возвращает загрузчик описания из враппера или null.
+   */
+  private static async tryCreate(definition: vscode.Location): Promise<DocumentSymbolLoader | null> {
+    if (DocumentSymbolLoader.needLoadDocumentSymbol(definition.uri)) {
+      const documentSymbolLoader = new DocumentSymbolLoader(definition);
+      await documentSymbolLoader.loadDocumentLines();
+      return Promise.resolve(documentSymbolLoader);
+    }
+    return Promise.resolve(null);
+  }
+
+  /**
+   * Загрузить описание.
+   * @param location {@link vscode.Location Местоположение}, для которого нужно загрузить описание.
+   * @returns Возвращает загрженное описание или null.
+   */
+  public static async loadWrapperProgrammingConstruct(location: vscode.Location): Promise<IGetOriginalSymbols | null> {
+    const documentSymbolLoader = await DocumentSymbolLoader.tryCreate(location);
+    if (documentSymbolLoader) {
+      return Promise.resolve(await documentSymbolLoader.loadDocumentSymbols());
+    }
+    return Promise.resolve(null);
+  }
+}
+
+/** Поисковик описания по токену и диапазону */
+class SymbolSearcherByTokenAndRange extends SymbolSearcher {
+  /** Токен для поиска. */
+  private token: string;
+
+  /** Диапазон поиска. */
+  private range: vscode.Range;
+
+  /**
+   * Признак, что контейнер подходит под условия при сравнении с переданными токенами.
+   * @param uri Uri документа, в котором ищем.
+   * @param container Контейнер.
+   * @returns true - если контейнер подходит под условия, иначе - false.
+   */
+  protected async needGetSymbol(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<boolean> {
+    if (this.token === container.name) {
+      const location = container.selectionRange;
+      return Promise.resolve(location.isEqual(this.range));
+    }
+    return Promise.resolve(false);
+  }
+
+  /**
+   * Конструктор.
+   * @param uri Uri документа, в котором ищем.
+   * @param token Токен для поиска.
+   * @param range Диапазон для поиска.
+   */
+  constructor(uri: vscode.Uri, token: string, range: vscode.Range) {
+    super(uri);
+    this.token = token;
+    this.range = range;
+    this.needOnlyOneResult = true;
   }
 }

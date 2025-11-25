@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { IElementDetail } from './symbol-searcher';
+import { ElementDetail, InfoFromComment, IGetOriginalSymbols, SupportUriFromComment } from '../types';
+import { SymbolSearcherByHrefComment } from '../searchers/symbol-searcher-by-comment';
 
 /** Описание программной конструкции. */
-export class ProgrammingConstruct {
+export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFromComment {
   /** Вид. */
   protected kind: vscode.SymbolKind;
 
@@ -12,8 +13,33 @@ export class ProgrammingConstruct {
   /** Детальное описание. */
   public detail: string;
 
+  /** Uri из комментария. */
+  public uriFromComment: vscode.Uri;
+
+  /**
+   * Создать объект в зависимости от его типа.
+   * @param symbol Описание.
+   * @returns Возвращается созданный в зависимости от описания объект.
+   */
+  public static Create(infoFromComment: InfoFromComment, symbol: ElementDetail): IGetOriginalSymbols {
+    switch (symbol.container.kind) {
+      case vscode.SymbolKind.Method: {
+        return new Function(infoFromComment, symbol);
+      }
+      case vscode.SymbolKind.Property: {
+        return new Property(infoFromComment.uri!, symbol);
+      }
+      case vscode.SymbolKind.Interface: {
+        return new Structure(infoFromComment.uri!, symbol);
+      }
+      default: {
+        return new ProgrammingConstruct(infoFromComment.uri!, symbol);
+      }
+    }
+  }
+
   /** Проверить равенство по именам. */
-  protected isNameEqual(element: IElementDetail): boolean {
+  protected isNameEqual(element: ElementDetail): boolean {
     return this.name === element.container.name;
   }
 
@@ -22,49 +48,49 @@ export class ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     // Сравнение для всех остальных.
     return element.container.detail === this.detail;
   }
 
   /**
    * Создает описание из враппера.
+   * @param uriFromComment Uri из href-комментария.
    * @param symbol Элемент с дополнительной информацией.
    */
-  protected constructor(symbol: IElementDetail) {
+  constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
     this.name = symbol.container.name;
     this.kind = symbol.container.kind;
     this.detail = symbol.container.detail;
+    this.uriFromComment = uriFromComment;
   }
 
   /** Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  public IsEqual(element: IElementDetail): boolean {
+  public isEqual(element: ElementDetail): boolean {
     return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
+  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
+    return await this.getOriginalSymbolByHrefComment(this);
+  }
+
   /**
-   * Создать объект в зависимости от его типа.
-   * @param symbol Описание.
-   * @returns Возвращается созданный в зависимости от описания объект.
+   * Вернуть описания по ссылке из комментария.
+   * @param wrapperDescription Определение из обертки, на основе которого ищем описание.
+   * @returns Массив с детальными описаниями.
    */
-  public static Create(symbol: IElementDetail): ProgrammingConstruct {
-    switch (symbol.container.kind) {
-      case vscode.SymbolKind.Method: {
-        return new Function(symbol);
-      }
-      case vscode.SymbolKind.Property: {
-        return new Property(symbol);
-      }
-      case vscode.SymbolKind.Interface: {
-        return new Structure(symbol);
-      }
-      default: {
-        return new ProgrammingConstruct(symbol);
+  public async getOriginalSymbolByHrefComment(wrapperDescription: SupportUriFromComment): Promise<vscode.Location[]> {
+    const local = new SymbolSearcherByHrefComment(wrapperDescription);
+    if (local) {
+      const symbols = await local.getSymbols();
+      if (Array.isArray(symbols)) {
+        return Promise.resolve(symbols);
       }
     }
+    return Promise.resolve([]);
   }
 }
 
@@ -78,7 +104,7 @@ class Property extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     switch (element.container.kind) {
       case vscode.SymbolKind.Property: {
         return (
@@ -93,8 +119,8 @@ class Property extends ProgrammingConstruct {
     }
   }
 
-  constructor(symbol: IElementDetail) {
-    super(symbol);
+  constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
+    super(uriFromComment, symbol);
     this.parent = symbol.parent;
   }
 }
@@ -137,7 +163,7 @@ class Structure extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isNameEqual(element: IElementDetail): boolean {
+  protected isNameEqual(element: ElementDetail): boolean {
     return this.searchNames.includes(element.container.name);
   }
 
@@ -146,15 +172,15 @@ class Structure extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     return (
       element.container.kind === vscode.SymbolKind.Class &&
       element.container.detail === this.getStructureWithoutPrefix()
     );
   }
 
-  constructor(symbol: IElementDetail) {
-    super(symbol);
+  constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
+    super(uriFromComment, symbol);
     this.addTokensForSearch();
   }
 }
@@ -208,7 +234,7 @@ class Function extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns Описание функции для сравнения.
    */
-  private getFunctionDetailForCompare(element: IElementDetail): string {
+  private getFunctionDetailForCompare(element: ElementDetail): string {
     // Если функция инъекции, изолированная, функция модуля, инициализации или статическая, то первый параметр должен остаться.
     if (
       this.isInjection ||
@@ -225,7 +251,7 @@ class Function extends ProgrammingConstruct {
    * @param element Элемент для сравнения.
    * @returns true - если элемент равен текущему, иначе false.
    */
-  protected isDetailEqual(element: IElementDetail): boolean {
+  protected isDetailEqual(element: ElementDetail): boolean {
     // Сравнение для функций
     if (element.container.kind === vscode.SymbolKind.Method) {
       const functionDetail = this.getFunctionDetailForCompare(element);
@@ -237,8 +263,8 @@ class Function extends ProgrammingConstruct {
     return super.isDetailEqual(element);
   }
 
-  constructor(symbol: IElementDetail) {
-    super(symbol);
-    this.isInjection = symbol.isInjection;
+  constructor(infoFromComment: InfoFromComment, symbol: ElementDetail) {
+    super(infoFromComment.uri!, symbol);
+    this.isInjection = infoFromComment.isInjection;
   }
 }

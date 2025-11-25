@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import * as VSCodeApi from './vscode-api';
 import { DocumentSymbolLoader } from './symbol-loader';
-import { SymbolSearcher } from './symbol-searcher';
 
 /** Дополнительный поставщик определений. */
 export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
@@ -20,18 +19,11 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
     const currentDefinitions = await VSCodeApi.getDefinitions(document.uri, position);
 
     for (const definition of currentDefinitions) {
-      const symbolLoader = new DocumentSymbolLoader(definition);
-
-      if (await symbolLoader.tryLoadDocumentSymbols()) {
-        const originalSymbols = await SymbolSearcher.getSymbols(
-          symbolLoader.originalUri!,
-          symbolLoader.documentSymbol!,
-        );
-        modifiedDefinitions.unshift(
-          ...originalSymbols.map(
-            (symbol) => new vscode.Location(symbolLoader.originalUri!, symbol.container.selectionRange),
-          ),
-        );
+      const wrapperProgrammingConstruct = await DocumentSymbolLoader.loadWrapperProgrammingConstruct(definition);
+      if (wrapperProgrammingConstruct) {
+        const sourceLocation = new vscode.Location(document.uri, position);
+        const originalSymbols = await wrapperProgrammingConstruct.getOriginalSymbols(sourceLocation);
+        modifiedDefinitions.unshift(...originalSymbols);
       }
     }
     return Promise.resolve(modifiedDefinitions);
@@ -61,5 +53,19 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
       this.lock = false;
     }
     return Promise.resolve(modifiedDefinitions);
+  }
+}
+
+/**
+ * Выполнить команду перехода к определению символа в заданной позиции документа или показа списка с такими символами.
+ * @param document Документ, в котором была вызвана команда.
+ * @param position Позиция, в которой была вызвана команда.
+ * @returns Производится переход к определению символа, если нашлось только одно определение или показывается peek, если нашлось несколько.
+ */
+export async function resourcesOpensInPeekCommand(document: vscode.TextDocument, position: vscode.Position) {
+  const modifiedDefinitions = await VSCodeApi.getDefinitions(document.uri, position);
+  const onlyResourcesDefinition = modifiedDefinitions.filter((item) => item.uri.fsPath.endsWith('resx'));
+  if (onlyResourcesDefinition.length > 0) {
+    await VSCodeApi.showReferences(document.uri, position, onlyResourcesDefinition);
   }
 }
