@@ -2,7 +2,7 @@
   "name": "development-studio-vscode-extension",
   "displayName": "development-studio-vscode-extension",
   "description": "Development Studio Extension for VS Code",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "sungero",
   "engines": {
     "vscode": "^1.89.1"
