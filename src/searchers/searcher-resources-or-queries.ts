@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { IGetSymbols, SupportTextFormatSearch, TextLinesByUri } from '../types';
 
+/** Поисковик описания по текстовым файлам. */
 export class TextFormatSearcher implements IGetSymbols {
   /** Определение из обертки. */
   protected wrapperDescription: SupportTextFormatSearch;
@@ -64,6 +65,6 @@ export class TextFormatSearcher implements IGetSymbols {
     if (!this.textLinesByUriDictionary[index] || this.textLinesByUriDictionary[index].length === 0) {
       this.textLinesByUriDictionary[index] = await VSCodeApi.loadDocumentLines(uri);
     }
-    return this.textLinesByUriDictionary[index];
+    return Promise.resolve(this.textLinesByUriDictionary[index]);
   }
 }
