@@ -37,18 +37,36 @@
             "default": "en"
           }
         }
+      },
+      {
+        "title": "Sungero",
+        "properties": {
+          "sungero.queryTypeDefault": {
+            "type": "string",
+            "enumItemLabels": [
+              "postgres",
+              "mssql"
+            ],
+            "enum": [
+              "postgres",
+              "mssql"
+            ],
+            "description": "Предпочтительный тип запроса.",
+            "default": "postgres"
+          }
+        }
       }
     ],
     "commands": [
       {
-        "command": "sungero.resourcesOpensInPeek",
-        "title": "Show peek view of the resources",
+        "command": "sungero.opensInPeek",
+        "title": "Show peek view of the results",
         "category": "Sungero"
       }
     ],
     "keybindings": [
       {
-        "command": "sungero.resourcesOpensInPeek",
+        "command": "sungero.opensInPeek",
         "key": "Ctrl+Alt+R",
         "when": "(editorLangId == csharp) && editorTextFocus"
       }

@@ -37,28 +37,33 @@ export async function showSettingsUpdateDialog(context: vscode.ExtensionContext)
  * @param context Контекст расширения.
  */
 export async function addStatusBarCommand(context: vscode.ExtensionContext) {
-  const changeLanguageCommand = 'sungero.changeLanguage';
+  const changeDSSettingsCommand = 'sungero.changeDSSettings';
   const configSection = 'sungero';
-  const configKey = 'resourseLanguageDefault';
-  const settingName = `${configSection}.${configKey}`;
+  const resourceConfigKey = 'resourseLanguageDefault';
+  const queryTypeConfigKey = 'queryTypeDefault';
+  const resourceSettingName = `${configSection}.${resourceConfigKey}`;
+  const queryTypeSettingName = `${configSection}.${queryTypeConfigKey}`;
 
   /**
    * Актуализировать отображаемое значение в статус баре.
    * @param statusBarItem Элемент строки состояния.
    */
   function updateStatusBarItem(statusBarItem: vscode.StatusBarItem): void {
-    const setting = vscode.workspace.getConfiguration().get<string>(settingName);
-    statusBarItem.text = `DS (${setting !== 'en' ? setting : ''}.resx)`;
+    const resourceSettingValue = vscode.workspace.getConfiguration().get<string>(resourceSettingName);
+    const queryTypeSettingValue = vscode.workspace.getConfiguration().get<string>(queryTypeSettingName);
+    statusBarItem.text = `DS (${
+      resourceSettingValue !== 'en' ? resourceSettingValue : ''
+    }.resx, .${queryTypeSettingValue}.sql)`;
     statusBarItem.show();
   }
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.command = changeLanguageCommand;
+  statusBarItem.command = changeDSSettingsCommand;
   context.subscriptions.push(statusBarItem);
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration(settingName)) {
+      if (e.affectsConfiguration(resourceSettingName) || e.affectsConfiguration(queryTypeSettingName)) {
         updateStatusBarItem(statusBarItem);
       }
     }),
@@ -66,21 +71,71 @@ export async function addStatusBarCommand(context: vscode.ExtensionContext) {
 
   updateStatusBarItem(statusBarItem);
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand(changeLanguageCommand, async () => {
-      const sungeroConfig = vscode.workspace.getConfiguration(configSection);
-      const settingValue = sungeroConfig.get<string>(configKey);
+  context.subscriptions.push(vscode.commands.registerCommand(changeDSSettingsCommand, changeSettings));
 
-      const quickPick = await vscode.window.showQuickPick(
-        ['en', 'ru' ],
-        {
-          canPickMany: false,
-          placeHolder: 'Select default language for resources show',
-        },
-      );
-      if (quickPick && quickPick !== settingValue) {
-        await sungeroConfig.update(configKey, quickPick, true);
+  /**
+   * Изменить настройки.
+   */
+  async function changeSettings() {
+    interface SettingItem extends vscode.QuickPickItem {
+      label: string;
+      setting: { items: vscode.QuickPickItem[]; placeHolder: string; settingName: string };
+    }
+
+    const changeSelectSettings = async (setting: {
+      items: vscode.QuickPickItem[];
+      placeHolder: string;
+      settingName: string;
+    }): Promise<void> => {
+      const currentValue: vscode.QuickPickItem = {
+        label: vscode.workspace.getConfiguration().get<string>(setting.settingName)!,
+      };
+      setting.items.forEach((item) => {
+        if (item.label === currentValue.label) {
+          item.description = `${item.description} - current value`;
+        }
+      });
+      const choice = await vscode.window.showQuickPick<vscode.QuickPickItem>(setting.items, {
+        canPickMany: false,
+        placeHolder: setting.placeHolder,
+      });
+      if (choice && choice !== currentValue) {
+        await vscode.workspace.getConfiguration().update(setting.settingName, choice.label, true);
       }
-    }),
-  );
+    };
+
+    let picks: SettingItem[] = [];
+    const configurateResourceLanguageSettings: SettingItem = {
+      label: 'Configure Resource Language',
+      setting: {
+        items: [
+          { label: 'en', description: '*.resx' },
+          { label: 'ru', description: '*.ru.resx' },
+        ],
+        placeHolder: 'Select Default Resources Language',
+        settingName: resourceSettingName,
+      },
+    };
+    picks.push(configurateResourceLanguageSettings);
+    const configurateQueryTypeSettings: SettingItem = {
+      label: 'Configure Query Type',
+      setting: {
+        items: [
+          { label: 'postgresql', description: '*_postgresql.sql' },
+          { label: 'mssql', description: '*_mssql.sql' },
+        ],
+        placeHolder: 'Select Default Query Type',
+        settingName: queryTypeSettingName,
+      },
+    };
+    picks.push(configurateQueryTypeSettings);
+
+    const quickPick = await vscode.window.showQuickPick<SettingItem>(picks, {
+      canPickMany: false,
+      placeHolder: 'Select Action',
+    });
+    if (quickPick) {
+      await changeSelectSettings(quickPick.setting);
+    }
+  }
 }

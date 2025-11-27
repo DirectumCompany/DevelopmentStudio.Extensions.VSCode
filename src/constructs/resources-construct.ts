@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
 import * as VSCodeApi from '../vscode-api';
-import { ElementDetail, IGetOriginalSymbols } from '../types';
-import { ResourcesSearcher } from '../searchers/searcher-resources';
+import { ElementDetail, SupportTextFormatSearch } from '../types';
+import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
 
 /** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
@@ -11,9 +11,9 @@ export class Resources {
    * @param symbol Описание.
    * @returns Возвращается созданный в зависимости от описания объект или null, если описание не подошло под условия создания.
    */
-  public static Create(symbol: ElementDetail): IGetOriginalSymbols | null {
+  public static Create(symbol: ElementDetail): SupportTextFormatSearch | null {
     if (
-      symbol.parent.endsWith('Resources') &&
+      symbol.parent.name.endsWith('Resources') &&
       [vscode.SymbolKind.Method, vscode.SymbolKind.Property].includes(symbol.container.kind)
     ) {
       return symbol.uri.fsPath.endsWith('Module.g.cs')
@@ -25,7 +25,7 @@ export class Resources {
 }
 
 /** Описание элемента ресурсной строки сущности или отчета. */
-export class ResourceEntityOrReport implements IGetOriginalSymbols {
+class ResourceEntityOrReport implements SupportTextFormatSearch {
   /** Имя. */
   public name: string;
 
@@ -67,7 +67,7 @@ export class ResourceEntityOrReport implements IGetOriginalSymbols {
   private async getResourceStringLocations(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
     const result = [];
     const documentUris = await this.getSearchUris(sourceLocation);
-    const local = new ResourcesSearcher(documentUris, this);
+    const local = new TextFormatSearcher(documentUris, this);
     const symbols = await local.getSymbols();
     result.push(...symbols);
     return Promise.resolve(result);

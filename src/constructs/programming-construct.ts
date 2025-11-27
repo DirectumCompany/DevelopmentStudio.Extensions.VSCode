@@ -109,19 +109,19 @@ class Property extends ProgrammingConstruct {
       case vscode.SymbolKind.Property: {
         return (
           this.parent!.startsWith('I') &&
-          this.parent!.substring(1) === element.parent &&
+          this.parent!.substring(1) === element.parent.name &&
           element.container.detail === this.detail
         );
       }
       default: {
-        return this.parent! === element.parent && super.isDetailEqual(element);
+        return this.parent! === element.parent.name && super.isDetailEqual(element);
       }
     }
   }
 
   constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
     super(uriFromComment, symbol);
-    this.parent = symbol.parent;
+    this.parent = symbol.parent.name;
   }
 }
 
@@ -238,7 +238,7 @@ class Function extends ProgrammingConstruct {
     // Если функция инъекции, изолированная, функция модуля, инициализации или статическая, то первый параметр должен остаться.
     if (
       this.isInjection ||
-      ['IsolatedFunctions', 'ModuleFunctions', 'ModuleInitializer'].includes(element.parent) ||
+      ['IsolatedFunctions', 'ModuleFunctions', 'ModuleInitializer'].includes(element.parent.name) ||
       this.isStatic(element.textLine!)
     ) {
       return this.detail;

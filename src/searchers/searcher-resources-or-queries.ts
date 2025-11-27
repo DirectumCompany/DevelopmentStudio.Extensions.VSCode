@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
-import { IGetSymbols, TextLinesByUri } from '../types';
-import { ResourceEntityOrReport } from '../constructs/resources-construct';
+import { IGetSymbols, SupportTextFormatSearch, TextLinesByUri } from '../types';
 
-export class ResourcesSearcher implements IGetSymbols {
+/** Поисковик описания по текстовым файлам. */
+export class TextFormatSearcher implements IGetSymbols {
   /** Определение из обертки. */
-  protected wrapperDescription: ResourceEntityOrReport;
+  protected wrapperDescription: SupportTextFormatSearch;
 
   /** Uri документа. */
   protected documentUris: vscode.Uri[];
@@ -18,7 +18,7 @@ export class ResourcesSearcher implements IGetSymbols {
    * @param uris Массив Uri документов.
    * @param wrapperDescription Описание программной конструкции.
    */
-  public constructor(uris: vscode.Uri[], wrapperDescription: ResourceEntityOrReport) {
+  public constructor(uris: vscode.Uri[], wrapperDescription: SupportTextFormatSearch) {
     this.wrapperDescription = wrapperDescription;
     this.documentUris = uris;
     this.textLinesByUriDictionary = {};
@@ -39,7 +39,7 @@ export class ResourcesSearcher implements IGetSymbols {
   }
 
   /**
-   * Получить диапазон ресурсной строки.
+   * Получить диапазон.
    * @param uri Uri, где надо вести поиск.
    * @returns Диапазон найденной строки или null, если строку найти не удалось.
    */
@@ -60,11 +60,11 @@ export class ResourcesSearcher implements IGetSymbols {
    * @param uri Uri документа.
    * @returns Массив строк из документа по указанному Uri.
    */
-  protected async getTextLinesByUri(uri: vscode.Uri): Promise<string[]> {
+  private async getTextLinesByUri(uri: vscode.Uri): Promise<string[]> {
     const index = uri.path;
     if (!this.textLinesByUriDictionary[index] || this.textLinesByUriDictionary[index].length === 0) {
       this.textLinesByUriDictionary[index] = await VSCodeApi.loadDocumentLines(uri);
     }
-    return this.textLinesByUriDictionary[index];
+    return Promise.resolve(this.textLinesByUriDictionary[index]);
   }
 }

@@ -1,13 +1,20 @@
 import * as vscode from 'vscode';
 import { ProgrammingConstruct } from './constructs/programming-construct';
 import { Resources } from './constructs/resources-construct';
+import { Queries } from './constructs/queries-construct';
 
 /** Детальное описание элемента. */
 export interface ElementDetail {
   container: vscode.DocumentSymbol;
-  parent: string;
+  parent: NameAndDetail;
   uri: vscode.Uri;
   textLine?: string;
+}
+
+/** Описание с именем и детальными данными. */
+export interface NameAndDetail {
+  name: string;
+  detail: string;
 }
 
 /** Информация из комментария. */
@@ -46,7 +53,15 @@ export interface TextLinesByUri {
 export interface SupportUriFromComment {
   uriFromComment: vscode.Uri;
   isEqual(element: ElementDetail): boolean;
-};
+}
+
+/**
+ * Интерфейс получения оригинальных определений с поддержкой поиска в текстовом формате.
+ */
+export interface SupportTextFormatSearch extends IGetOriginalSymbols {
+  name: string;
+  isEqual(line: string): boolean;
+}
 
 /**
  * Создать объект в зависимости от его описания.
@@ -61,6 +76,6 @@ export function createWrapperConstruct(
   if (infoFromComment.uri) {
     return ProgrammingConstruct.Create(infoFromComment, symbol);
   } else {
-    return Resources.Create(symbol);
+    return Resources.Create(symbol) ?? Queries.Create(symbol);
   }
 }
