@@ -1,6 +1,6 @@
 {
   "name": "development-studio-vscode-extension",
-  "displayName": "development-studio-vscode-extension",
+  "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
   "version": "0.0.4",
   "publisher": "sungero",
@@ -60,7 +60,7 @@
     "commands": [
       {
         "command": "sungero.opensInPeek",
-        "title": "Show peek view of the results",
+        "title": "Показать окно предварительного просмотра",
         "category": "Sungero"
       }
     ],
