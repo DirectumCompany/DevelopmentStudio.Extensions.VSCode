@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable import/order */
 import * as vscode from 'vscode';
 import fs from 'fs';
 import path from 'path';

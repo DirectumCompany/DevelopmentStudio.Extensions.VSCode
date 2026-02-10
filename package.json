@@ -2,8 +2,9 @@
   "name": "development-studio-vscode-extension",
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "publisher": "sungero",
+  "icon": "assets/images/ds-icon.png",
   "engines": {
     "vscode": "^1.89.1"
   },
@@ -78,19 +79,25 @@
     "compile": "webpack --mode development",
     "watch": "npm run compile && tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
+    "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@eslint/js": "9.19.0",
+    "@eslint/js": "9.39.1",
     "@types/node": "20.x",
     "@types/vscode": "1.89.0",
-    "@vscode/vsce": "^3.6.0",
-    "eslint": "9.19.0",
-    "ts-loader": "^9.5.2",
-    "typescript": "5.4.5",
-    "typescript-eslint": "8.23.0",
-    "webpack": "^5.101.0",
-    "webpack-cli": "^6.0.1"
+    "@typescript-eslint/parser": "8.48.0",
+    "@vscode/vsce": "3.6.0",
+    "eslint": "9.39.1",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-import-resolver-typescript": "4.4.4",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-jsdoc": "61.4.1",
+    "jiti": "2.6.1",
+    "ts-loader": "9.5.2",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.48.0",
+    "webpack": "5.101.0",
+    "webpack-cli": "6.0.1"
   }
 }

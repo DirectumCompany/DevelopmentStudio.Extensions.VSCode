@@ -1,3 +1,13 @@
+/* eslint-disable jsdoc/check-param-names */
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-confusing-non-null-assertion */
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable jsdoc/multiline-blocks */
+/* eslint-disable jsdoc/require-returns */
+/* eslint-disable jsdoc/require-param */
 import * as vscode from 'vscode';
 import { ElementDetail, InfoFromComment, IGetOriginalSymbols, SupportUriFromComment } from '../types';
 import { SymbolSearcherByHrefComment } from '../searchers/symbol-searcher-by-comment';

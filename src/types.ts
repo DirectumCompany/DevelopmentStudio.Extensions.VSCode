@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/consistent-indexed-object-style */
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable jsdoc/require-jsdoc */
 import * as vscode from 'vscode';
 import { ProgrammingConstruct } from './constructs/programming-construct';
 import { Resources } from './constructs/resources-construct';

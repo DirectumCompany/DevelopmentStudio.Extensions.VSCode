@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable @typescript-eslint/no-inferrable-types */
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, IGetSymbols, NameAndDetail } from '../types';

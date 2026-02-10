@@ -1,4 +1,8 @@
-import * as vscode from "vscode";
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/no-inferrable-types */
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/array-type */
+import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { DocumentSymbolLoader } from './symbol-loader';
 

@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/prefer-regexp-exec */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher-base';

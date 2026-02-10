@@ -1,3 +1,7 @@
+/* eslint-disable jsdoc/check-param-names */
+/* eslint-disable jsdoc/multiline-blocks */
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable import/order */
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { SymbolSearcher } from './symbol-searcher-base';

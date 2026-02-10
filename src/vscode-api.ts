@@ -1,4 +1,10 @@
-import * as vscode from "vscode";
+/* eslint-disable jsdoc/require-param */
+/* eslint-disable jsdoc/multiline-blocks */
+/* eslint-disable jsdoc/check-param-names */
+/* eslint-disable jsdoc/require-returns */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/array-type */
+import * as vscode from 'vscode';
 
 /**
  * Вернуть определения.
@@ -31,7 +37,11 @@ export const loadDocumentLines = async (uri: vscode.Uri) => {
  * @param position Позиция, где была вызвана команда.
  */
 export const getImplementations = async (documentUri: vscode.Uri, position: vscode.Position) => {
-  return vscode.commands.executeCommand<vscode.Location[]>('vscode.executeImplementationProvider', documentUri, position);
+  return vscode.commands.executeCommand<vscode.Location[]>(
+    'vscode.executeImplementationProvider',
+    documentUri,
+    position,
+  );
 };
 
 /**

@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+/* eslint-disable jsdoc/require-jsdoc */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as vscode from 'vscode';
 import { AdditionalDefinitionProvider, opensInPeekCommand } from './definition-provider';
 import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';

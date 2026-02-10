@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { IGetSymbols, SupportTextFormatSearch, TextLinesByUri } from '../types';

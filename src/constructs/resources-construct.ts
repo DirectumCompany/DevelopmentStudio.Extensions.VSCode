@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/require-await */
+/* eslint-disable jsdoc/require-jsdoc */
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable import/order */
 import * as vscode from 'vscode';
 import fs from 'fs';
 import * as VSCodeApi from '../vscode-api';

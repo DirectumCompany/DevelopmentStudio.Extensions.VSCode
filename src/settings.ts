@@ -1,3 +1,10 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/array-type */
+/* eslint-disable jsdoc/require-jsdoc */
+/* eslint-disable @typescript-eslint/require-await */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as vscode from 'vscode';
 
 /**
