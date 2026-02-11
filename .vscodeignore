@@ -15,3 +15,5 @@ out/**
 **/*.bat
 **/*.vsix
 .prettierignore
+**/*.bak
+**/tsconfig.eslint.json

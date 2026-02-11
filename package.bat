@@ -6,4 +6,4 @@
 :: На этот же коммит добавляется тег с номером версии и префиксом v. Например для 0.0.2 тег будет v0.0.2. 
 
 call npm ci
-call npx @vscode/vsce package --allow-missing-repository --skip-license %1
+call npx @vscode/vsce package --allow-missing-repository --skip-license --out development-studio-vscode-extension.vsix %1
