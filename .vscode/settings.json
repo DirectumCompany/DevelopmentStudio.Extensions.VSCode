@@ -11,5 +11,13 @@
 
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "modificationsIfAvailable",
-  "editor.defaultFormatter": "esbenp.prettier-vscode"
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "extension-test-runner.debugOptions": {
+    "skipFiles": ["<node_internals>/**", "**/node_modules/**", "**/app/out/vs/**", "**/app/extensions/**"]
+  },
+  "extension-test-runner.extractSettings": {
+    "suite": ["describe", "suite"],
+    "test": ["it", "test"],
+    "extractWith": "evaluation"
+  }
 }

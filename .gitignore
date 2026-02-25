@@ -4,3 +4,6 @@ node_modules
 .vscode-test/
 *.vsix
 *.bak
+src/tests/workspace/**/obj
+src/tests/workspace/**/bin
+src/tests/workspace/**/*.g.cs
