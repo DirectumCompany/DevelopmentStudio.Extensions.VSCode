@@ -27,8 +27,14 @@ suite('AdditionalDefinitionProvider', () => {
         {
           public class Resources
           {
+            /// <summary>
+            /// <see href="file:///${workspace.uri.path}/Module.resx" internal="" />
+            /// </summary>
             public static global::CommonLibrary.LocalizedString ResValue => default;
 
+            /// <summary>
+            /// <see href="file:///${workspace.uri.path}/Module.resx" internal="" />
+            /// </summary>
             public static global::CommonLibrary.LocalizedString ResValueFormat(params object[] args) => default;
           }
         }
@@ -72,7 +78,7 @@ suite('AdditionalDefinitionProvider', () => {
     );
 
     const expected = [
-      new vscode.Location(moduleGCsUri, new vscode.Range(16, 64, 16, 72)),
+      new vscode.Location(moduleGCsUri, new vscode.Range(19, 64, 19, 72)),
       new vscode.Location(vscode.Uri.joinPath(workspace.uri, 'Module.resx'), new vscode.Range(60, 14, 60, 22)),
     ];
 
@@ -87,7 +93,7 @@ suite('AdditionalDefinitionProvider', () => {
     );
 
     const expected = [
-      new vscode.Location(moduleGCsUri, new vscode.Range(26, 33, 26, 42)),
+      new vscode.Location(moduleGCsUri, new vscode.Range(32, 33, 32, 42)),
       new vscode.Location(vscode.Uri.joinPath(workspace.uri, 'Queries/SomeQuery.sql'), new vscode.Range(0, 0, 0, 0)),
     ];
 

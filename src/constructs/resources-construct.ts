@@ -1,37 +1,49 @@
 /* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable jsdoc/require-jsdoc */
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable import/order */
 import * as vscode from 'vscode';
 import fs from 'fs';
+import path from 'path';
 import * as VSCodeApi from '../vscode-api';
-import { ElementDetail, SupportTextFormatSearch } from '../types';
+import { ElementDetail, ISourceLocation, SupportTextFormatSearch } from '../types';
 import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
+import { DocumentSymbolLoader } from '../symbol-loader';
 
 /** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
   /**
    * Создать объект в зависимости от его типа.
+   * @param uri Uri из комментария.
    * @param symbol Описание.
    * @returns Возвращается созданный в зависимости от описания объект или null, если описание не подошло под условия создания.
    */
-  public static Create(symbol: ElementDetail): SupportTextFormatSearch | null {
+  public static Create(uri: vscode.Uri | null, symbol: ElementDetail): SupportTextFormatSearch | null {
     if (
       symbol.parent.name.endsWith('Resources') &&
       [vscode.SymbolKind.Method, vscode.SymbolKind.Property].includes(symbol.container.kind)
     ) {
-      return symbol.uri.fsPath.endsWith('Module.g.cs')
-        ? new ResourceModuleOrSolution(symbol)
-        : new ResourceEntityOrReport(symbol);
+      if (!symbol.uri.fsPath.endsWith('Module.g.cs')) return new ResourceEntityOrReport(symbol);
+      if (uri) return new ResourceModuleOrSolution(uri, symbol);
     }
     return null;
   }
+}
+
+/** Интерфейс попытки получения результата. */
+interface ITryGetResult {
+  /** Признак успешности получения результата. */
+  success: boolean;
+  /** Результат. */
+  result: string;
 }
 
 /** Описание элемента ресурсной строки сущности или отчета. */
 class ResourceEntityOrReport implements SupportTextFormatSearch {
   /** Имя. */
   public name: string;
+
+  /** Исходное расположение. */
+  public sourceLocation: ISourceLocation | undefined;
 
   /**
    * Конструктор.
@@ -41,8 +53,8 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
     this.name = symbol.container.name.replace(/(\w*)Format/, '$1');
   }
 
-  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
-    return await this.getResourceStringLocations(sourceLocation);
+  public async getOriginalSymbols(): Promise<vscode.Location[]> {
+    return await this.getResourceStringLocations();
   }
 
   /**
@@ -55,107 +67,167 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
   }
 
   /**
-   * Вернуть {@link vscode.Location расположение}.
-   * @param sourceLocation Исходное расположение.
-   * @returns Расположение.
+   * Вернуть путь к ресурсному файлу из href-комментария.
+   * @returns Расположение или null, если не удалось достать информацию.
    */
-  protected async getLocation(sourceLocation: vscode.Location): Promise<vscode.Location> {
-    return Promise.resolve(sourceLocation);
+  protected async getResourcesPathFromComment(): Promise<string | null> {
+    if (!this.sourceLocation) return null;
+
+    const implementation = await this.getImplementation(this.sourceLocation);
+    if (!implementation?.uri.fsPath.endsWith('.g.cs')) return null;
+
+    const documentLines = await VSCodeApi.loadDocumentLines(implementation.uri);
+    const commentInfo = await DocumentSymbolLoader.getInfoFromComment(documentLines, implementation.range);
+    const uri = commentInfo.uri;
+    return uri?.fsPath ?? null;
   }
 
   /**
    * Вернуть расположения ресурсной строки.
-   * @param sourceLocation Исходное {@link vscode.Location расположение}.
    * @returns Массив с {@link vscode.Location расположениями}.
    */
-  private async getResourceStringLocations(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
-    const result = [];
-    const documentUris = await this.getSearchUris(sourceLocation);
+  private async getResourceStringLocations(): Promise<vscode.Location[]> {
+    if (!this.sourceLocation) return [];
+    const documentUris = await this.getSearchUris(this.sourceLocation.document.uri);
     const local = new TextFormatSearcher(documentUris, this);
-    const symbols = await local.getSymbols();
-    result.push(...symbols);
-    return Promise.resolve(result);
+    return await local.getSymbols();
   }
 
   /**
    * Вернуть массив Uri для поиска элемента.
-   * @param sourceLocation Исходное {@link vscode.Location расположение}.
+   * @param uri Uri документа, в котором вызывана команда.
    * @returns Массив Uri для поиска элемента.
    */
-  private async getSearchUris(sourceLocation: vscode.Location): Promise<vscode.Uri[]> {
-    const location = await this.getLocation(sourceLocation);
-    const currentImplementations = await VSCodeApi.getImplementations(location.uri, location.range.start);
-    if (currentImplementations.length > 0) {
-      const currentImplementation =
-        this.getNearestLocation(sourceLocation, currentImplementations) ?? currentImplementations.pop()!;
-      return this.getResourcesUris(currentImplementation.uri);
+  private async getSearchUris(uri: vscode.Uri): Promise<vscode.Uri[]> {
+    const defaultResourcesPath = await this.getResourcesPathFromComment();
+    if (defaultResourcesPath) {
+      return this.getResourcesUris(defaultResourcesPath);
     }
-    return [location.uri];
+    return [uri];
   }
 
   /**
-   * Получить ближайшее {@link vscode.Location расположение}.
-   * @param location {@link vscode.Location Расположение}, рядом с которым ищем.
-   * @param implementations Массив {@link vscode.Location расположений}, в которых ищем.
-   * @returns Ближайшее {@link vscode.Location расположение}.
+   * Вернуть {@link vscode.Location расположение}.
+   * @param sourceLocation Исходное расположение.
+   * @returns Наиболее подходящее {@link vscode.Location расположение} или null, если такого не нашлось.
    */
-  private getNearestLocation(location: vscode.Location, implementations: vscode.Location[]): vscode.Location | null {
-    function commonPrefixLength(a: string, b: string): number {
-      const len = Math.min(a.length, b.length);
-      let i: number;
-      for (i = 0; i < len; i++) {
-        if (a.charCodeAt(i) !== b.charCodeAt(i)) {
-          return i;
-        }
-      }
-      return len;
-    }
+  private async getImplementation(sourceLocation: ISourceLocation): Promise<vscode.Location | null> {
+    const { document, position } = sourceLocation;
+    const implementations = await VSCodeApi.getImplementations(document.uri, position);
+    if (implementations?.length <= 0) return null;
+    if (implementations?.length === 1) return implementations[0];
 
-    const nearest = implementations
-      .map((value, index) => {
-        return {
-          index,
-          prefixLen: commonPrefixLength(value.uri.toString().toLowerCase(), location.uri.toString().toLowerCase()),
-        };
-      })
-      .sort((a, b) => {
-        if (a.prefixLen > b.prefixLen) {
-          return -1;
-        }
-        return a.prefixLen < b.prefixLen ? 1 : 0;
-      })[0];
-    if (nearest) {
-      return implementations[nearest.index];
+    const resourcesManagerPath = await this.getRepositoryPath(sourceLocation);
+    if (!resourcesManagerPath.success) return implementations[0];
+
+    const suitableImplementation = implementations.find(
+      (implementation) => implementation.uri.fsPath === resourcesManagerPath.result,
+    );
+    if (suitableImplementation) return suitableImplementation;
+
+    /**
+     * Вернуть имя g.cs файла с объявлением ресурсов для случая, когда ресурсная строка в перекрытии не переопределена.
+     * @param fullPath Полный путь.
+     * @returns Имя файла.
+     */
+    const getFileName = (fullPath: string): string => path.parse(fullPath).base;
+
+    /**
+     * Вернуть часть пути к g.cs файлу с объявлением ресурсов для случая, когда ресурсная строка в перекрытии переопределена.
+     * @param fullPath Полный путь.
+     * @returns Часть пути.
+     */
+    const getPartPath = (fullPath: string): string => {
+      const dir = path.parse(fullPath).dir;
+      return dir.slice(0, dir.lastIndexOf(path.sep));
+    };
+
+    for (const func of [getFileName, getPartPath]) {
+      const resourcesManagerFileName = func(resourcesManagerPath.result);
+      const result = implementations.find(
+        (implementation) => resourcesManagerFileName === func(implementation.uri.fsPath),
+      );
+      if (result) return result;
     }
-    return null;
+    return implementations[0];
+  }
+
+  /**
+   * Вернуть путь до файла, где создается класс ресурсов.
+   * @param sourceLocation Исходное расположение.
+   * @returns В случае успеха возвращается путь до файла, где создается класс ресурсов.
+   */
+  private async getRepositoryPath(sourceLocation: ISourceLocation): Promise<ITryGetResult> {
+    const { document, position } = sourceLocation;
+
+    /**
+     * Вернуть индекс, где начинается соседний токен.
+     * @returns Возвращает индекс, где начинается соседний токен, или -1 если диапазон текщего токена оперделить не удалось.
+     */
+    const getNearestTokenIndex = (): number => {
+      const range = document.getWordRangeAtPosition(position);
+      if (range) {
+        return range.start.character - 1;
+      }
+      return -1;
+    };
+
+    /**
+     * Вернуть расположения либо из вызова определения, либо из вызова оперделения типа, если определния ссылаются на путь из исходного Uri.
+     * @param uri Uri документа, в котором вызывана команда.
+     * @param newPosition Позиция, где была вызвана команда.
+     * @returns Массив с {@link vscode.Location расположениями}.
+     */
+    const getLocationsFromDefinition = async (
+      uri: vscode.Uri,
+      newPosition: vscode.Position,
+    ): Promise<vscode.Location[]> => {
+      let locations = [];
+      locations = await VSCodeApi.getDefinitions(uri, newPosition);
+      // Если ссылку на ресурсы сохранили в локальную переменную, то определение будет ссылаться на этот же файл.
+      // В таком случае пытаемся получить расположение определений ресурсов из определений типа.
+      // Подстраховка для случаев, когда будут использовать такой код:
+      //   var res = Documents.Resources;
+      //   var str = res.MyTest;
+      if (locations.length > 0 && locations[0].uri.fsPath === uri.fsPath) {
+        locations = await VSCodeApi.getTypeDefinitions(uri, newPosition);
+      }
+      return locations;
+    };
+
+    const index = getNearestTokenIndex();
+    if (index > -1) {
+      const newPosition = new vscode.Position(position.line, index);
+      const resourcesManagerLocations = await getLocationsFromDefinition(document.uri, newPosition);
+      if (resourcesManagerLocations.length > 0) {
+        return { success: true, result: resourcesManagerLocations[0].uri.fsPath };
+      }
+    }
+    return { success: false, result: '' };
   }
 
   /**
    * Вернуть массив Uri ресурсных файлов.
-   * @param uri Исходный Uri.
+   * @param sourcePathUri Исходное расположение.
    * @returns Массив Uri ресурсных файлов.
    */
-  private getResourcesUris(uri: vscode.Uri): vscode.Uri[] {
+  private async getResourcesUris(sourcePathUri: string): Promise<vscode.Uri[]> {
+    const RESOURCES_EXTENSION = '.resx';
     const uris: vscode.Uri[] = [];
-
     const resourcesLanguageDefault = vscode.workspace
       .getConfiguration()
       .get<string>('sungero.resourseLanguageDefault')!;
     const settingExtensionPairs = [
-      { setting: 'en', extension: '.resx' },
-      { setting: 'ru', extension: '.ru.resx' },
+      { setting: 'en', extension: `${RESOURCES_EXTENSION}` },
+      { setting: 'ru', extension: `.ru${RESOURCES_EXTENSION}` },
     ];
     settingExtensionPairs.sort((first) => (first.setting === resourcesLanguageDefault ? -1 : 1));
 
-    const sourcePath = uri.fsPath;
-    const checkedExtension = '.g.cs';
-    if (sourcePath.endsWith(checkedExtension)) {
-      const pathWithoutExtension = sourcePath.substring(0, sourcePath.length - checkedExtension.length);
-      const resourceFilePaths: string[] = settingExtensionPairs.map((item) => pathWithoutExtension + item.extension);
-      for (const filePath of resourceFilePaths) {
-        if (fs.existsSync(filePath)) {
-          uris.push(vscode.Uri.file(filePath));
-        }
+    const pathWithoutExtension = sourcePathUri.substring(0, sourcePathUri.length - RESOURCES_EXTENSION.length);
+    const resourceFilePaths: string[] = settingExtensionPairs.map((item) => pathWithoutExtension + item.extension);
+    for (const filePath of resourceFilePaths) {
+      if (fs.existsSync(filePath)) {
+        uris.push(vscode.Uri.file(filePath));
       }
     }
     return uris;
@@ -164,50 +236,20 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
 
 /** Описание элемента ресурсной строки модуля или решения. */
 class ResourceModuleOrSolution extends ResourceEntityOrReport {
-  /** Детальное описание элемента. */
-  protected symbol: ElementDetail;
+  /** Uri из комментария. */
+  private uri: vscode.Uri;
 
   /**
    * Конструктор.
+   * @param uri Uri из комментария.
    * @param symbol Элемент с дополнительной информацией.
    */
-  public constructor(symbol: ElementDetail) {
+  public constructor(uri: vscode.Uri, symbol: ElementDetail) {
     super(symbol);
-    this.symbol = symbol;
+    this.uri = uri;
   }
 
-  protected async getLocation(sourceLocation: vscode.Location): Promise<vscode.Location> {
-    try {
-      const newPosition = await this.getPositionDiff();
-      const position = new vscode.Position(
-        this.symbol.container.range.start.line + newPosition.lineOffset,
-        newPosition.characterStart,
-      );
-      return new vscode.Location(this.symbol.uri, position);
-    } catch {
-      return sourceLocation;
-    }
-  }
-
-  /**
-   * Вернуть смещение строки и позицию.
-   * @returns Смещение строки и позиция.
-   */
-  private async getPositionDiff(): Promise<{ lineOffset: number; characterStart: number }> {
-    const ReturnResourceString = 'return resources.';
-    const block = await this.getBlockCode();
-    const index = block.findIndex((item) => item.includes(ReturnResourceString));
-    return { lineOffset: index, characterStart: block[index].indexOf('.') + 1 };
-  }
-
-  /**
-   * Вернуть блок кода.
-   * @returns Блок кода.
-   */
-  private async getBlockCode(): Promise<string[]> {
-    const block = await vscode.workspace
-      .openTextDocument(this.symbol.uri)
-      .then(async (s) => s.getText(this.symbol.container.range).split('\n'));
-    return block;
+  protected async getResourcesPathFromComment(): Promise<string> {
+    return this.uri.fsPath;
   }
 }

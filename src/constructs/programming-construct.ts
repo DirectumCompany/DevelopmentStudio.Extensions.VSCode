@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-confusing-non-null-assertion */
 /* eslint-disable @typescript-eslint/array-type */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable jsdoc/multiline-blocks */
 /* eslint-disable jsdoc/require-returns */
 /* eslint-disable jsdoc/require-param */
@@ -83,7 +82,7 @@ export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFrom
     return this.isNameEqual(element) && this.isDetailEqual(element);
   }
 
-  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
+  public async getOriginalSymbols(): Promise<vscode.Location[]> {
     return await this.getOriginalSymbolByHrefComment(this);
   }
 

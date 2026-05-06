@@ -26,14 +26,23 @@ export interface InfoFromComment {
   isInjection: boolean;
 }
 
+/** Интерфейс исходного расположения. */
+export interface ISourceLocation {
+  /** Документ, где была вызвана команда. */
+  document: vscode.TextDocument;
+  /** Позиция, где была вызвана команда. */
+  position: vscode.Position;
+}
+
 /** Интерфейс получения оригинальных определений. */
 export interface IGetOriginalSymbols {
+  /** Исходное расположение. */
+  sourceLocation?: ISourceLocation;
   /**
    * Получить оригинальные определения.
-   * @param sourceLocation Исходное расположение.
    * @returns Массив оригинальных определений.
    */
-  getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]>;
+  getOriginalSymbols(): Promise<vscode.Location[]>;
 }
 
 /** Интерфейс получения определений. */
@@ -76,9 +85,11 @@ export function createWrapperConstruct(
   infoFromComment: InfoFromComment,
   symbol: ElementDetail,
 ): IGetOriginalSymbols | null {
+  const wrapper = Resources.Create(infoFromComment.uri, symbol);
+  if (wrapper) return wrapper;
   if (infoFromComment.uri) {
     return ProgrammingConstruct.Create(infoFromComment, symbol);
   } else {
-    return Resources.Create(symbol) ?? Queries.Create(symbol);
+    return Queries.Create(symbol);
   }
 }

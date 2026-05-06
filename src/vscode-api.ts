@@ -45,6 +45,19 @@ export const getImplementations = async (documentUri: vscode.Uri, position: vsco
 };
 
 /**
+ * Вернуть определения типа.
+ * @param documentUri Uri документа, в котором вызывана команда.
+ * @param position Позиция, где была вызвана команда.
+ */
+export const getTypeDefinitions = async (documentUri: vscode.Uri, position: vscode.Position) => {
+  return vscode.commands.executeCommand<vscode.Location[]>(
+    'vscode.executeTypeDefinitionProvider',
+    documentUri,
+    position,
+  );
+};
+
+/**
  * Показать ссылки.
  * @param documentUri Uri документа, где была вызвана команда.
  * @param position Позиция, где была вызвана команад.

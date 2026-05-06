@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable @typescript-eslint/array-type */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable import/order */
 import * as vscode from 'vscode';
 import fs from 'fs';
@@ -40,7 +39,7 @@ export class Queries implements SupportTextFormatSearch {
     this.sourcePath = symbol.uri.fsPath;
   }
 
-  public async getOriginalSymbols(sourceLocation: vscode.Location): Promise<vscode.Location[]> {
+  public async getOriginalSymbols(): Promise<vscode.Location[]> {
     return await this.getQueriesLocations();
   }
 

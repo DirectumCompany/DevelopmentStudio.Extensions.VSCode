@@ -20,12 +20,14 @@ export class DocumentSymbolLoader {
 
   /**
    * Вернуть ссылку на документ и признак инъекции из комментария.
+   * @param documentLines Массив строк документа.
+   * @param range Диапазон документ, в котором была вызвана команда.
    * @returns Возвращает Uri на файл с описанием определения или null и признак инъекции.
    */
-  private async getInfoFromComment(): Promise<InfoFromComment> {
+  public static async getInfoFromComment(documentLines: string[], range: vscode.Range): Promise<InfoFromComment> {
     const regexHref = /\/\/\/\s*<see href="file:\/\/\/([^"]*)" internal=""( proxy="")? \/>/;
-    for (let lineNumber = this.range.start.line - 1; lineNumber > this.range.start.line - 10; lineNumber--) {
-      const line = this.documentLines[lineNumber];
+    for (let lineNumber = range.start.line - 1; lineNumber > range.start.line - 10; lineNumber--) {
+      const line = documentLines[lineNumber];
       const match = line.match(regexHref);
       if (match) {
         return Promise.resolve({ uri: vscode.Uri.file(match[1].toString()), isInjection: match[2]?.length > 0 });
@@ -77,7 +79,7 @@ export class DocumentSymbolLoader {
    * @returns Загруженное описание или null.
    */
   protected async loadDocumentSymbols(): Promise<IGetOriginalSymbols | null> {
-    const infoFromComment = await this.getInfoFromComment();
+    const infoFromComment = await DocumentSymbolLoader.getInfoFromComment(this.documentLines, this.range);
     const documentSymbol = await this.getWrapperDocumentSymbol(infoFromComment);
     return Promise.resolve(documentSymbol);
   }
