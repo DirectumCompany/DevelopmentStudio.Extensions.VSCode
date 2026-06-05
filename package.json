@@ -2,12 +2,11 @@
   "name": "development-studio-vscode-extension",
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "sungero",
   "icon": "assets/images/ds-icon.png",
   "engines": {
-    "vscode": "^1.89.1",
-    "ms-dotnettools.csharp": "2.110.4"
+    "vscode": "^1.89.1"
   },
   "categories": [
     "Other"
@@ -86,7 +85,6 @@
   "devDependencies": {
     "@eslint/js": "9.39.1",
     "@types/node": "20.x",
-    "@types/semver": "7.7.1",
     "@types/vscode": "1.89.0",
     "@typescript-eslint/parser": "8.48.0",
     "@vscode/test-cli": "0.0.12",

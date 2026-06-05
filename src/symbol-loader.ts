@@ -1,19 +1,19 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/prefer-regexp-exec */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 /* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher-base';
-import { InfoFromComment, IGetOriginalSymbols, ElementDetail, createWrapperConstruct } from './types';
+import { InfoFromComment, IGetOriginalSymbols, ElementDetail, createWrapperConstruct, NameAndDetail } from './types';
 
 /** Загрузчик описания из враппера. */
 export class DocumentSymbolLoader {
   /** Исходный диапазон документа, в котором была вызвана команда. */
-  private range: vscode.Range;
+  private readonly range: vscode.Range;
 
   /** Исходный URI документа, в котором была вызвана команда. */
-  private uri: vscode.Uri;
+  private readonly uri: vscode.Uri;
 
   /** Массив строк документа. */
   private documentLines: string[];
@@ -69,9 +69,9 @@ export class DocumentSymbolLoader {
     tokens: string,
     range: vscode.Range,
   ): Promise<ElementDetail | null> {
-    const local = new SymbolSearcherByTokenAndRange(documentUri, tokens, range!);
+    const local = new SymbolSearcherByTokenAndRange(documentUri, tokens, range);
     const symbol = await local.getSymbols();
-    return Promise.resolve(!Array.isArray(symbol) ? symbol : null);
+    return Array.isArray(symbol) ? null : symbol;
   }
 
   /**
@@ -139,19 +139,24 @@ export class DocumentSymbolLoader {
 /** Поисковик описания по токену и диапазону */
 class SymbolSearcherByTokenAndRange extends SymbolSearcher {
   /** Токен для поиска. */
-  private token: string;
+  private readonly token: string;
 
   /** Диапазон поиска. */
-  private range: vscode.Range;
+  private readonly range: vscode.Range;
 
   /**
    * Признак, что контейнер подходит под условия при сравнении с переданными токенами.
-   * @param uri Uri документа, в котором ищем.
+   * @param _uri Uri документа, в котором ищем.
    * @param container Контейнер.
+   * @param _parent Родитель.
    * @returns true - если контейнер подходит под условия, иначе - false.
    */
-  protected async needGetSymbol(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<boolean> {
-    if (this.token === container.name) {
+  protected async needGetSymbol(
+    _uri: vscode.Uri,
+    container: vscode.DocumentSymbol,
+    _parent: NameAndDetail,
+  ): Promise<boolean> {
+    if (container.name.startsWith(this.token)) {
       const location = container.selectionRange;
       return Promise.resolve(location.isEqual(this.range));
     }

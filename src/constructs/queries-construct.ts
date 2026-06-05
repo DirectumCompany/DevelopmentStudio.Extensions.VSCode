@@ -6,14 +6,15 @@ import fs from 'fs';
 import path from 'path';
 import { ElementDetail, IGetOriginalSymbols, SupportTextFormatSearch } from '../types';
 import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
+import { getOnlyName } from '../utils';
 
 /** Описание элемента запроса */
 export class Queries implements SupportTextFormatSearch {
   /** Имя. */
-  public name: string;
+  public readonly name: string;
 
   /** Исходное расположение элемента. */
-  private sourcePath: string;
+  private readonly sourcePath: string;
 
   /**
    * Создать объект в зависимости от его типа.
@@ -22,7 +23,7 @@ export class Queries implements SupportTextFormatSearch {
    */
   public static Create(symbol: ElementDetail): IGetOriginalSymbols | null {
     if (
-      symbol.parent.detail.split('.').includes('Queries') &&
+      symbol.namespace?.split('.').includes('Queries') &&
       [vscode.SymbolKind.Property].includes(symbol.container.kind)
     ) {
       return new Queries(symbol);
@@ -35,7 +36,7 @@ export class Queries implements SupportTextFormatSearch {
    * @param symbol Элемент с дополнительной информацией.
    */
   private constructor(symbol: ElementDetail) {
-    this.name = symbol.container.name;
+    this.name = getOnlyName(symbol.container);
     this.sourcePath = symbol.uri.fsPath;
   }
 
@@ -71,7 +72,7 @@ export class Queries implements SupportTextFormatSearch {
         result.push(...symbols);
       }
     }
-    return Promise.resolve(result);
+    return result;
   }
 
   /**
@@ -102,8 +103,7 @@ export class Queries implements SupportTextFormatSearch {
    */
   private getExistingUris(getter: (path: string, name: string) => string[]): vscode.Uri[] {
     const uris: vscode.Uri[] = [];
-    const checkedExtension = '.g.cs';
-    if (this.sourcePath.endsWith(checkedExtension)) {
+    if (this.sourcePath.endsWith('.g.cs')) {
       const queryPaths = getter(this.sourcePath, this.name);
       for (const filePath of queryPaths) {
         if (fs.existsSync(filePath)) {

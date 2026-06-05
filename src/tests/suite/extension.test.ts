@@ -5,19 +5,14 @@ import { publisher, name } from '../../../package.json';
 
 suiteSetup(async () => {
   const dependencyName = process.env.DEP_NAME;
-  const dependencyVersion = process.env.DEP_VERSION;
 
-  if (!dependencyName || !dependencyVersion) throw new Error('"env.DEP_NAME" or "env.DEP_VERSION" not set.');
+  if (!dependencyName) throw new Error('"env.DEP_NAME" not set.');
 
   console.log(`Check dependency... '${dependencyName}'`);
   const dependency = vscode.extensions.getExtension(dependencyName);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  if (!dependency || dependency?.packageJSON.version !== dependencyVersion) {
+  if (!dependency) {
     console.log(`Installing... '${dependencyName}'`);
-    await vscode.commands.executeCommand(
-      'workbench.extensions.installExtension',
-      `${dependencyName}@${dependencyVersion}`,
-    );
+    await vscode.commands.executeCommand('workbench.extensions.installExtension', `${dependencyName}`);
     console.log(`Installed... '${dependencyName}'`);
   }
 });

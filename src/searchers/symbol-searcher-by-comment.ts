@@ -5,12 +5,12 @@
 import * as vscode from 'vscode';
 import * as VSCodeApi from '../vscode-api';
 import { SymbolSearcher } from './symbol-searcher-base';
-import { SupportUriFromComment } from '../types';
+import { NameAndDetail, SupportUriFromComment } from '../types';
 
 /** Поисковик описания по информации из href-комментария */
 export class SymbolSearcherByHrefComment extends SymbolSearcher {
   /** Определение из обертки. */
-  private wrapperDescription: SupportUriFromComment;
+  private readonly wrapperDescription: SupportUriFromComment;
 
   /** Строки документа. */
   private textLines: string[] = [];
@@ -31,18 +31,21 @@ export class SymbolSearcherByHrefComment extends SymbolSearcher {
    * Признак, что контейнер подходит под условия при сравнении с определением из обертки.
    * @param uri Uri документа, в котором ищем.
    * @param container Контейнер.
+   * @param parent Родитель.
    * @returns true - если контейнер подходит под условия, иначе - false.
    */
-  protected async needGetSymbol(uri: vscode.Uri, container: vscode.DocumentSymbol): Promise<boolean> {
+  protected async needGetSymbol(
+    uri: vscode.Uri,
+    container: vscode.DocumentSymbol,
+    parent: NameAndDetail,
+  ): Promise<boolean> {
     const textLine = await this.getTextLine(uri, container.selectionRange.start);
-    return Promise.resolve(
-      this.wrapperDescription.isEqual({
-        container: container,
-        parent: this.parent!,
-        uri: uri,
-        textLine: textLine,
-      }),
-    );
+    return this.wrapperDescription.isEqual({
+      container: container,
+      parent: parent,
+      uri: uri,
+      textLine: textLine,
+    });
   }
 
   /**

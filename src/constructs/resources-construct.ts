@@ -8,6 +8,7 @@ import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, ISourceLocation, SupportTextFormatSearch } from '../types';
 import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
 import { DocumentSymbolLoader } from '../symbol-loader';
+import { getOnlyName } from '../utils';
 
 /** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
@@ -50,7 +51,8 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
    * @param symbol Элемент с дополнительной информацией.
    */
   public constructor(symbol: ElementDetail) {
-    this.name = symbol.container.name.replace(/(\w*)Format/, '$1');
+    const onlyName = getOnlyName(symbol.container);
+    this.name = onlyName.replace(/(\w*)Format/, '$1');
   }
 
   public async getOriginalSymbols(): Promise<vscode.Location[]> {

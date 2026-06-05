@@ -5,11 +5,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as vscode from 'vscode';
-import * as semver from 'semver';
-import * as packageJSON from '../package.json';
 import { AdditionalDefinitionProvider, opensInPeekCommand } from './definition-provider';
 import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';
-
 
 /**
  * Попытаться активировать расширение ms-dotnettools.csharp.
@@ -17,24 +14,10 @@ import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';
  */
 async function tryActivateCSharpExtension(): Promise<boolean> {
   const dependencyId = 'ms-dotnettools.csharp';
-  const {
-    displayName,
-    engines: { 'ms-dotnettools.csharp': expectedDependencyVersion },
-  } = packageJSON;
 
   const csharpExtension = vscode.extensions.getExtension(dependencyId);
   if (!csharpExtension) {
     throw new Error(`Failed to find installation of '${dependencyId}'`);
-  }
-  const currentDependencyVersion = String(csharpExtension.packageJSON?.version);
-
-  if (semver.gt(currentDependencyVersion, String(expectedDependencyVersion))) {
-    const options: vscode.MessageOptions = {
-      detail: `Требуется '${dependencyId}:<=${expectedDependencyVersion}'. Текущая версия: '${currentDependencyVersion}'.`,
-      modal: true,
-    };
-    await vscode.window.showErrorMessage(`Ошибка активации '${displayName}'.`, options);
-    return false;
   }
 
   await csharpExtension.activate();

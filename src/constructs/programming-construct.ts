@@ -5,21 +5,21 @@
 /* eslint-disable @typescript-eslint/no-confusing-non-null-assertion */
 /* eslint-disable @typescript-eslint/array-type */
 /* eslint-disable jsdoc/multiline-blocks */
-/* eslint-disable jsdoc/require-returns */
 /* eslint-disable jsdoc/require-param */
 import * as vscode from 'vscode';
 import { ElementDetail, InfoFromComment, IGetOriginalSymbols, SupportUriFromComment } from '../types';
 import { SymbolSearcherByHrefComment } from '../searchers/symbol-searcher-by-comment';
+import { getDescriptionWithTypeAliases, getOnlyName } from '../utils';
 
 /** Описание программной конструкции. */
 export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFromComment {
   /** Вид. */
   protected kind: vscode.SymbolKind;
 
-  /** Имя. */
+  /** Только имя, без типов параметров и возвращаемого значения. Пример: `HasDocumentRegistersByDocument`. */
   protected name: string;
 
-  /** Детальное описание. */
+  /** Детальное описание, включает типы параметров и возвращаемое значение. Пример: `HasDocumentRegistersByDocument(IOfficialDocument, Enumeration?) : bool`.*/
   public detail: string;
 
   /** Uri из комментария. */
@@ -47,9 +47,13 @@ export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFrom
     }
   }
 
-  /** Проверить равенство по именам. */
-  protected isNameEqual(element: ElementDetail): boolean {
-    return this.name === element.container.name;
+  /**
+   * Признак соответствует ли имя критериям. Критерии для класса могут быть свои.
+   * @param element Элемент для сравнения.
+   * @returns true - если имя соответствует, иначе false.
+   */
+  protected isNameMatchesCriteria(element: ElementDetail): boolean {
+    return element.container.name.startsWith(this.name);
   }
 
   /**
@@ -68,18 +72,18 @@ export class ProgrammingConstruct implements IGetOriginalSymbols, SupportUriFrom
    * @param symbol Элемент с дополнительной информацией.
    */
   constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
-    this.name = symbol.container.name;
+    this.name = getOnlyName(symbol.container);
+    this.detail = getDescriptionWithTypeAliases(symbol.container);
     this.kind = symbol.container.kind;
-    this.detail = symbol.container.detail;
     this.uriFromComment = uriFromComment;
   }
 
   /** Признак, что переданный для сравнения элемент равен текущему.
-   * @param element Элемент для сравнения.
+   * @param element Элемент для сравнения. `ElementDetail.container.name` и `ElementDetail.container.detail` одинаковы и приходят с типами параметров и возвращаемым значением.
    * @returns true - если элемент равен текущему, иначе false.
    */
   public isEqual(element: ElementDetail): boolean {
-    return this.isNameEqual(element) && this.isDetailEqual(element);
+    return this.isNameMatchesCriteria(element) && this.isDetailEqual(element);
   }
 
   public async getOriginalSymbols(): Promise<vscode.Location[]> {
@@ -157,22 +161,22 @@ class Structure extends ProgrammingConstruct {
    * Вернуть детальное описание без префикса.
    * @returns Детальное описание структуры без префикса "I".
    * @description Используется для структур.
-   * Пример того, что подается на вход: 'Sungero.Commons.Structures.Module.IArioFact'.
-   * На выходе должно получиться: 'Sungero.Commons.Structures.Module.ArioFact'.
+   * Пример того, что подается на вход: 'IArioFact'.
+   * На выходе должно получиться: 'ArioFact'.
    */
   private getStructureWithoutPrefix(): string {
     if (!this.structureWithoutPrefix) {
-      this.structureWithoutPrefix = this.detail.replace(/(\.)I([^.]*)$/, '$1$2');
+      this.structureWithoutPrefix = this.detail.substring(1);
     }
     return this.structureWithoutPrefix;
   }
 
   /**
-   * Проверить равенство по именам.
+   * Признак соответствует ли имя критериям. Критерии для класса могут быть свои.
    * @param element Элемент для сравнения.
-   * @returns true - если элемент равен текущему, иначе false.
+   * @returns true - если имя соответствует, иначе false.
    */
-  protected isNameEqual(element: ElementDetail): boolean {
+  protected isNameMatchesCriteria(element: ElementDetail): boolean {
     return this.searchNames.includes(element.container.name);
   }
 
@@ -205,13 +209,13 @@ class Function extends ProgrammingConstruct {
   /**
    * Вернуть описание функции без первого параметра.
    * @returns Описание функции без первого параметра.
-   * @description На вход поступает: 'GetExtensionValidationError(IOfficialDocument officialDocument, String extension)'.
-   * На выходе ожидаем: 'GetExtensionValidationError(String extension)'.
+   * @description На вход поступает: 'GetExtensionValidationError(IOfficialDocument, String)'.
+   * На выходе ожидаем: 'GetExtensionValidationError(String)'.
    */
   private getFunctionWithoutFirstParam(): string {
     if (!this.functionWithoutFirstParam) {
       let definition = this.detail;
-      definition = definition.replace(/(\()([\w.<>]+)\s+(\w+)(,)?\s*/, '$1');
+      definition = definition.replace(/(\()([\w.<>]+)\s*(,)?\s*/, '$1');
       this.functionWithoutFirstParam = definition.toString();
     }
     return this.functionWithoutFirstParam;

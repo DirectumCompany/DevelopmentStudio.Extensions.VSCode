@@ -10,6 +10,7 @@ import { Queries } from './constructs/queries-construct';
 export interface ElementDetail {
   container: vscode.DocumentSymbol;
   parent: NameAndDetail;
+  namespace?: string;
   uri: vscode.Uri;
   textLine?: string;
 }
