@@ -2,7 +2,7 @@
   "name": "development-studio-vscode-extension",
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "publisher": "sungero",
   "icon": "assets/images/ds-icon.png",
   "engines": {
@@ -83,23 +83,31 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.1",
-    "@types/node": "20.x",
+    "@eslint/js": "10.0.1",
+    "@types/mocha": "10.0.10",
+    "@types/node": "26.1.1",
     "@types/vscode": "1.89.0",
-    "@typescript-eslint/parser": "8.48.0",
-    "@vscode/test-cli": "0.0.12",
+    "@typescript-eslint/parser": "8.65.0",
+    "@vscode/test-cli": "0.0.15",
     "@vscode/test-electron": "2.5.2",
-    "@vscode/vsce": "3.6.0",
-    "eslint": "9.39.1",
+    "@vscode/vsce": "3.9.2",
+    "eslint": "10.7.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-import-resolver-typescript": "4.4.4",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-jsdoc": "61.4.1",
-    "ts-loader": "9.5.2",
-    "tsx": "4.21.0",
-    "typescript": "5.9.3",
-    "typescript-eslint": "8.48.0",
-    "webpack": "5.101.0",
-    "webpack-cli": "6.0.1"
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-import-x": "4.17.1",
+    "eslint-plugin-jsdoc": "63.2.1",
+    "ts-loader": "9.6.2",
+    "tsx": "4.23.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "webpack": "5.109.0",
+    "webpack-cli": "7.2.1"
+  },
+  "overrides": {
+    "diff": "8.0.4",
+    "serialize-javascript": "7.0.7",
+    "brace-expansion": "5.0.8",
+    "minimatch@9": "9.0.9",
+    "minimatch@10": "10.2.5"
   }
 }
