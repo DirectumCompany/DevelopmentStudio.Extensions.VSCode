@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /**@type {import('webpack').Configuration}*/
 const config = {
@@ -36,5 +37,6 @@ const config = {
       },
     ],
   },
+  plugins: [new CopyWebpackPlugin({ patterns: [{ from: './src/commands/media', to: 'media' }] })],
 };
 module.exports = config;

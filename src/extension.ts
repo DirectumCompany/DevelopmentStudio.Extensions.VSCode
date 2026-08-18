@@ -5,14 +5,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as vscode from 'vscode';
-import { AdditionalDefinitionProvider, opensInPeekCommand } from './definition-provider';
+import { AdditionalDefinitionProvider } from './definition-provider';
 import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';
+import { opensInPeekCommand } from './commands/open-in-peek/open-in-peek-command';
+import { createResourceFromTextCommand } from './commands/create-resource/create-resource-command';
 
 /**
  * Попытаться активировать расширение ms-dotnettools.csharp.
+ * @param logger Логгер.
  * @returns Признак успешности активации.
  */
-async function tryActivateCSharpExtension(): Promise<boolean> {
+async function tryActivateCSharpExtension(logger: vscode.LogOutputChannel): Promise<boolean> {
   const dependencyId = 'ms-dotnettools.csharp';
 
   const csharpExtension = vscode.extensions.getExtension(dependencyId);
@@ -22,12 +25,15 @@ async function tryActivateCSharpExtension(): Promise<boolean> {
 
   await csharpExtension.activate();
   await csharpExtension.exports.initializationFinished();
-  console.log('ms-dotnettools.csharp activated');
+  logger.info('ms-dotnettools.csharp activated');
   return true;
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-  if (!(await tryActivateCSharpExtension())) return;
+  const logger = vscode.window.createOutputChannel('development-studio-vscode-extension', { log: true });
+  context.subscriptions.push(logger);
+
+  if (!(await tryActivateCSharpExtension(logger))) return;
   showSettingsUpdateDialog(context);
 
   const disposable = vscode.languages.registerDefinitionProvider(
@@ -43,6 +49,14 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   });
   context.subscriptions.push(disposableCommand);
+
+  const disposableCreateResourceCommand = vscode.commands.registerCommand('sungero.createResourceFromText', () => {
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor) {
+      createResourceFromTextCommand(activeEditor, context);
+    }
+  });
+  context.subscriptions.push(disposableCreateResourceCommand);
 
   await addStatusBarCommand(context);
 }

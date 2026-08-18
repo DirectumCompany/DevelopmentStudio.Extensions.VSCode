@@ -2,7 +2,7 @@
   "name": "development-studio-vscode-extension",
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "publisher": "sungero",
   "icon": "assets/images/ds-icon.png",
   "engines": {
@@ -63,6 +63,11 @@
         "command": "sungero.opensInPeek",
         "title": "Показать окно предварительного просмотра",
         "category": "Sungero"
+      },
+      {
+        "command": "sungero.createResourceFromText",
+        "title": "Создать ресурс",
+        "category": "Sungero"
       }
     ],
     "keybindings": [
@@ -70,8 +75,21 @@
         "command": "sungero.opensInPeek",
         "key": "Ctrl+Alt+R",
         "when": "(editorLangId == csharp) && editorTextFocus"
+      },
+      {
+        "command": "sungero.createResourceFromText",
+        "key": "Ctrl+Alt+N",
+        "when": "(editorLangId == csharp) && editorTextFocus && !editorReadonly"
       }
-    ]
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "sungero.createResourceFromText",
+          "when": "(editorLangId == csharp) && !editorReadonly"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -91,6 +109,7 @@
     "@vscode/test-cli": "0.0.15",
     "@vscode/test-electron": "2.5.2",
     "@vscode/vsce": "3.9.2",
+    "copy-webpack-plugin": "14.0.0",
     "eslint": "10.7.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.5",

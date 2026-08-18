@@ -1,0 +1,214 @@
+/* ============================================
+   ПЕРЕМЕННЫЕ
+   ============================================ */
+
+:root {
+    --error-background: var(--vscode-inputValidation-errorBackground, #fdeded);
+    --error-border: var(--vscode-inputValidation-errorBorder, #f44336);
+    --success: var(--vscode-testing-iconPassed, #4CAF50);
+    --error: var(--vscode-testing-iconFailed, #f44336);
+    --input-border: var(--vscode-input-border, #2677cb2e);
+    --button-background: var(--vscode-button-background);
+    --button-hover: var(--vscode-button-hoverBackground);
+    --button-secondary: var(--vscode-button-secondaryBackground, #6c757d);
+    --button-secondary-hover: var(--vscode-button-secondaryHoverBackground, #5a6268);
+}
+
+/* ============================================
+   БАЗА
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    padding: 24px;
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ============================================
+   ЗАГОЛОВОК
+   ============================================ */
+
+header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--input-border);
+}
+
+/* ============================================
+   ОШИБКИ
+   ============================================ */
+
+.server-errors {
+    background-color: var(--error-background);
+    border: 1px solid var(--error-border);
+    color: var(--vscode-errorForeground);
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 3px;
+    display: none;
+    overflow-wrap: break-word;
+}
+
+.server-errors.visible {
+    display: block;
+}
+
+.server-errors ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.server-errors li {
+    margin-bottom: 4px;
+}
+
+.server-errors li:last-child {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   ПОЛЯ
+   ============================================ */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.field label {
+    font-weight: 500;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper :is(input, textarea) {
+    width: 100%;
+    padding: 8px 40px 8px 12px;
+    border: 1px solid var(--input-border);
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.input-wrapper textarea {
+    min-height: 80px;
+    max-height: 150px;
+    resize: vertical;
+}
+
+.input-wrapper :is(input, textarea):focus {
+    outline: none;
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.15);
+}
+
+input.error-field, textarea.error-field {
+    border-color: var(--vscode-inputValidation-errorBorder);
+    box-shadow: 0 0 1px 0 var(--vscode-inputValidation-errorBorder);
+}
+
+.error {
+    color: var(--vscode-errorForeground);
+    font-size: 12px;
+    min-height: 16px;
+    display: block;
+    margin-top: 4px;
+}
+
+/* ============================================
+   КНОПКИ
+   ============================================ */
+
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.create-resource,
+.cancel-create-resource {
+    flex: 1;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.create-resource {
+    background: var(--button-background);
+    color: var(--vscode-button-foreground);
+}
+
+.create-resource:hover:not(:disabled) {
+    background: var(--button-hover);
+}
+
+.create-resource:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.cancel-create-resource {
+    background: var(--button-secondary);
+    color: var(--vscode-button-secondaryForeground, #fff);
+    order: 2;
+}
+
+.cancel-create-resource:hover:not(:disabled) {
+    background: var(--button-secondary-hover);
+}
+
+/* ============================================
+   ФУТЕР
+   ============================================ */
+
+.content-footer {
+    margin-top: 12px;
+    padding: 8px 0;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.7;
+    border-top: 1px solid var(--input-border);
+    text-align: center;
+}
+
+.hotkey-hint {
+    display: inline-block;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 11px;
+    background: var(--vscode-input-background);
+    border: 1px solid var(--input-border);
+    border-radius: 3px;
+    color: var(--vscode-input-foreground);
+}
+
+:focus-visible {
+    outline: 2px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+}
