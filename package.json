@@ -6,7 +6,8 @@
   "publisher": "sungero",
   "icon": "assets/images/ds-icon.png",
   "engines": {
-    "vscode": "^1.89.1"
+    "vscode": "^1.89.1",
+    "node": "24.18.0"
   },
   "categories": [
     "Other"
