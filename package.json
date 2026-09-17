@@ -2,7 +2,7 @@
   "name": "development-studio-vscode-extension",
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "publisher": "sungero",
   "icon": "assets/images/ds-icon.png",
   "engines": {
@@ -126,8 +126,12 @@
   "overrides": {
     "diff": "8.0.4",
     "serialize-javascript": "7.0.7",
-    "brace-expansion": "5.0.8",
+    "brace-expansion": "5.0.12",
     "minimatch@9": "9.0.9",
-    "minimatch@10": "10.2.5"
+    "minimatch@10": "10.2.5",
+    "fast-uri": "3.1.8",
+    "qs": "6.16.0",
+    "js-yaml": "4.3.2",
+    "undici": "7.29.1"
   }
 }
