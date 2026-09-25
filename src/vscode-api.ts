@@ -16,6 +16,23 @@ export const getDefinitions = async (documentUri: vscode.Uri, position: vscode.P
 };
 
 /**
+ * Вернуть ссылки на символ в позиции.
+ * @param documentUri Uri документа, в котором вызывана команда.
+ * @param position Позиция, где была вызвана команда.
+ */
+export const getReferencesAt = async (documentUri: vscode.Uri, position: vscode.Position) => {
+  return vscode.commands.executeCommand<vscode.Location[]>('vscode.executeReferenceProvider', documentUri, position);
+};
+
+/**
+ * Найти символы по имени во всем workspace.
+ * @param query Имя символа.
+ */
+export const findWorkspaceSymbols = async (query: string) => {
+  return vscode.commands.executeCommand<vscode.SymbolInformation[]>('vscode.executeWorkspaceSymbolProvider', query);
+};
+
+/**
  * Вернуть описания.
  * @param documentUri Uri документа, в котором вызывана команда.
  */

@@ -17,12 +17,14 @@ export abstract class SymbolSearcher implements IGetSymbols {
    * @param uri Uri документа, в котором ищем.
    * @param container Контейнер.
    * @param parent Родитель.
+   * @param containerTypeNames Цепочка типов-контейнеров (без namespace).
    * @returns true - если контейнер подходит под условия, иначе - false.
    */
   protected abstract needGetSymbol(
     uri: vscode.Uri,
     container: vscode.DocumentSymbol,
     parent: NameAndDetail,
+    containerTypeNames: string[],
   ): Promise<boolean>;
 
   /**
@@ -31,6 +33,7 @@ export abstract class SymbolSearcher implements IGetSymbols {
    * @param container Контейнер.
    * @param parent Родитель.
    * @param namespace Пространство имен.
+   * @param containerTypeNames Цепочка типов-контейнеров (без namespace).
    * @returns Массив найденных описаний.
    */
   private async findSymbols(
@@ -38,22 +41,31 @@ export abstract class SymbolSearcher implements IGetSymbols {
     container: vscode.DocumentSymbol,
     parent: NameAndDetail,
     namespace: string,
+    containerTypeNames: string[],
   ): Promise<ElementDetail[]> {
     const foundSymbols: ElementDetail[] = [];
 
-    if (await this.needGetSymbol(uri, container, parent)) {
+    if (await this.needGetSymbol(uri, container, parent, containerTypeNames)) {
       foundSymbols.push({
         container: container,
         parent: parent,
         namespace: namespace,
         uri: uri,
+        containerTypeNames: containerTypeNames,
       });
     }
     if (this.needOnlyOneResult && foundSymbols.length > 0) return foundSymbols;
 
     const parentContainer = { name: container.name, detail: container.detail };
+    const isNamespaceSymbol = [
+      vscode.SymbolKind.Namespace,
+      vscode.SymbolKind.Module,
+      vscode.SymbolKind.Package,
+    ].includes(container.kind);
+    const childContainerTypeNames = isNamespaceSymbol ? containerTypeNames : [...containerTypeNames, container.name];
+
     for (const element of container.children) {
-      foundSymbols.push(...(await this.findSymbols(uri, element, parentContainer, namespace)));
+      foundSymbols.push(...(await this.findSymbols(uri, element, parentContainer, namespace, childContainerTypeNames)));
       if (this.needOnlyOneResult && foundSymbols.length > 0) return foundSymbols;
     }
     return foundSymbols;
@@ -67,7 +79,7 @@ export abstract class SymbolSearcher implements IGetSymbols {
     if (symbols && symbols.length > 0) {
       for (const symbol of symbols) {
         const parent = { name: '', detail: '' };
-        foundSymbols = await this.findSymbols(uri, symbol, parent, symbol.name);
+        foundSymbols = await this.findSymbols(uri, symbol, parent, symbol.name, []);
         if (this.needOnlyOneResult && foundSymbols.length) {
           break;
         }

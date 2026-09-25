@@ -13,6 +13,8 @@ export interface ElementDetail {
   namespace?: string;
   uri: vscode.Uri;
   textLine?: string;
+  /** Цепочка типов-контейнеров (без namespace). */
+  containerTypeNames?: string[];
 }
 
 /** Описание с именем и детальными данными. */

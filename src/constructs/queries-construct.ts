@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { ElementDetail, IGetOriginalSymbols, SupportTextFormatSearch } from '../types';
 import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
-import { getOnlyName } from '../utils';
+import { getOnlyName, isWrapperFile } from '../utils';
 
 /** Описание элемента запроса */
 export class Queries implements SupportTextFormatSearch {
@@ -103,7 +103,7 @@ export class Queries implements SupportTextFormatSearch {
    */
   private getExistingUris(getter: (path: string, name: string) => string[]): vscode.Uri[] {
     const uris: vscode.Uri[] = [];
-    if (this.sourcePath.endsWith('.g.cs')) {
+    if (isWrapperFile(vscode.Uri.file(this.sourcePath))) {
       const queryPaths = getter(this.sourcePath, this.name);
       for (const filePath of queryPaths) {
         if (fs.existsSync(filePath)) {

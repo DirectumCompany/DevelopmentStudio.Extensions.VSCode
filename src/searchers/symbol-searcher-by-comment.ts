@@ -32,12 +32,14 @@ export class SymbolSearcherByHrefComment extends SymbolSearcher {
    * @param uri Uri документа, в котором ищем.
    * @param container Контейнер.
    * @param parent Родитель.
+   * @param containerTypeNames Цепочка типов-контейнеров (без namespace).
    * @returns true - если контейнер подходит под условия, иначе - false.
    */
   protected async needGetSymbol(
     uri: vscode.Uri,
     container: vscode.DocumentSymbol,
     parent: NameAndDetail,
+    containerTypeNames: string[],
   ): Promise<boolean> {
     const textLine = await this.getTextLine(uri, container.selectionRange.start);
     return this.wrapperDescription.isEqual({
@@ -45,6 +47,7 @@ export class SymbolSearcherByHrefComment extends SymbolSearcher {
       parent: parent,
       uri: uri,
       textLine: textLine,
+      containerTypeNames: containerTypeNames,
     });
   }
 

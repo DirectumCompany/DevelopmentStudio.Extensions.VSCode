@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/prefer-regexp-exec */
 /* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
+import { isWrapperFile } from './utils';
 import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher-base';
 import { InfoFromComment, IGetOriginalSymbols, ElementDetail, createWrapperConstruct, NameAndDetail } from './types';
@@ -105,7 +106,7 @@ export class DocumentSymbolLoader {
    * @returns true - если нужно загружать, иначе false.
    */
   private static needLoadDocumentSymbol(uri: vscode.Uri): boolean {
-    return uri.fsPath.endsWith('g.cs');
+    return isWrapperFile(uri);
   }
 
   /**
@@ -149,12 +150,14 @@ class SymbolSearcherByTokenAndRange extends SymbolSearcher {
    * @param _uri Uri документа, в котором ищем.
    * @param container Контейнер.
    * @param _parent Родитель.
+   * @param _containerTypeNames Цепочка типов-контейнеров (без namespace).
    * @returns true - если контейнер подходит под условия, иначе - false.
    */
   protected async needGetSymbol(
     _uri: vscode.Uri,
     container: vscode.DocumentSymbol,
     _parent: NameAndDetail,
+    _containerTypeNames: string[],
   ): Promise<boolean> {
     if (container.name.startsWith(this.token)) {
       const location = container.selectionRange;

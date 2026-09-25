@@ -8,7 +8,7 @@ import * as VSCodeApi from '../vscode-api';
 import { ElementDetail, ISourceLocation, SupportTextFormatSearch } from '../types';
 import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
 import { DocumentSymbolLoader } from '../symbol-loader';
-import { getOnlyName } from '../utils';
+import { getOnlyName, isWrapperFile } from '../utils';
 
 /** Класс для создания описания элемента ресурсной строки. */
 export class Resources {
@@ -76,7 +76,7 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
     if (!this.sourceLocation) return null;
 
     const implementation = await this.getImplementation(this.sourceLocation);
-    if (!implementation?.uri.fsPath.endsWith('.g.cs')) return null;
+    if (!implementation || !isWrapperFile(implementation.uri)) return null;
 
     const documentLines = await VSCodeApi.loadDocumentLines(implementation.uri);
     const commentInfo = await DocumentSymbolLoader.getInfoFromComment(documentLines, implementation.range);
@@ -184,8 +184,7 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
       uri: vscode.Uri,
       newPosition: vscode.Position,
     ): Promise<vscode.Location[]> => {
-      let locations = [];
-      locations = await VSCodeApi.getDefinitions(uri, newPosition);
+      let locations = await VSCodeApi.getDefinitions(uri, newPosition);
       // Если ссылку на ресурсы сохранили в локальную переменную, то определение будет ссылаться на этот же файл.
       // В таком случае пытаемся получить расположение определений ресурсов из определений типа.
       // Подстраховка для случаев, когда будут использовать такой код:

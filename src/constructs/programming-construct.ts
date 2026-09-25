@@ -112,6 +112,9 @@ class Property extends ProgrammingConstruct {
   /** Имя предка. */
   protected parent?: string;
 
+  /** Цепочка типов-контейнеров (без namespace). */
+  private readonly containerTypeNames: string[];
+
   /**
    * Признак, что переданный для сравнения элемент равен текущему.
    * @param element Элемент для сравнения.
@@ -126,15 +129,34 @@ class Property extends ProgrammingConstruct {
           element.container.detail === this.detail
         );
       }
+      case vscode.SymbolKind.Constant:
+      case vscode.SymbolKind.Field: {
+        // Тип у обёртки и оригинала может отличаться, поэтому сравниваем имя и цепочку типов-контейнеров.
+        return (
+          this.parent! === element.parent.name &&
+          Property.isSameContainerTypes(this.containerTypeNames, element.containerTypeNames ?? [])
+        );
+      }
       default: {
         return this.parent! === element.parent.name && super.isDetailEqual(element);
       }
     }
   }
 
+  /**
+   * Совпадают ли цепочки типов-контейнеров.
+   * @param left Первая цепочка.
+   * @param right Вторая цепочка.
+   * @returns true - если цепочки одинаковы.
+   */
+  private static isSameContainerTypes(left: string[], right: string[]): boolean {
+    return left.length === right.length && left.every((name, index) => name === right[index]);
+  }
+
   constructor(uriFromComment: vscode.Uri, symbol: ElementDetail) {
     super(uriFromComment, symbol);
     this.parent = symbol.parent.name;
+    this.containerTypeNames = symbol.containerTypeNames ?? [];
   }
 }
 

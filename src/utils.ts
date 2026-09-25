@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
 
 /**
+ * Является ли файл сгенерированной обёрткой (`*.g.cs`).
+ * @param uri Uri документа.
+ * @returns true - если файл сгенерирован платформой.
+ */
+export const isWrapperFile = (uri: vscode.Uri): boolean => uri.fsPath.endsWith('.g.cs');
+
+/**
  * Вернуть количество символов из {@linkcode vscode.DocumentSymbol.selectionRange selectionRange}.
  * @param container Контейнер.
  * @returns Количество символов.
