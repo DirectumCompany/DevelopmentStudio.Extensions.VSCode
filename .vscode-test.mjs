@@ -18,7 +18,9 @@ export function createVersionConfigs(publisher, extension) {
       DEP_NAME: `${publisher}.${extension}`,
       DEP_VERSION: '',
     },
-    launchArgs: ['--headless', '--disable-workspace-trust', '--disable-extension-updates', '--profile=test-profile'],
+    // Профиль не задаётся специально: с ним установленное через installExtensions расширение не видно
+    // в окне теста. К аргументу --disable-workspace-trust это не относится.
+    launchArgs: ['--disable-workspace-trust'],
     mocha: {
       ui: 'tdd',
       require: ['tsx/cjs'],

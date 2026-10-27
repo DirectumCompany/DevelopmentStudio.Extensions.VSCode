@@ -30,10 +30,12 @@
 
 | Файл / каталог              | Назначение                                                                                                               |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `extension.ts`              | Активация: дожидается активации и готовности C#-расширения (Roslyn), затем регистрирует провайдеры определения, ссылок и CodeLens                                 |
+| `extension.ts`              | Активация: дожидается активации и готовности C#-расширения (Roslyn), затем регистрирует провайдеры определения, ссылок и CodeLens, подписывает кэши на изменения файлов |
 | `definition-provider.ts`    | `AdditionalDefinitionProvider` — дополняет Go to Definition переходами от обёртки к оригиналу                            |
 | `reference-provider.ts`     | `AdditionalReferenceProvider` — дополняет Find All References переходами от оригинала к обёрткам                             |
 | `reference-search.ts`       | `ReferenceSearch` — сбор ссылок по обёрткам, фильтрация `*.g.cs`, дедуп, кэш                                       |
+| `document-lines-cache.ts`   | `DocumentLinesCache` — кэш строк документов: поиск обёрток не перечитывает `*.g.cs` целиком на каждый запрос       |
+| `document-cache-invalidation.ts` | `registerDocumentCacheInvalidation` — подписки на правки документов и на изменения файлов: сброс кэша строк и пересчёт линз |
 | `code-lens-provider.ts`     | `AdditionalCodeLensProvider` — линза «N references» над объявлениями: счёт объединённых ссылок через `ReferenceSearch`, кэш и пересчёт |
 | `wrapper-locator.ts`        | `WrapperLocator` — поиск обёрток в `*.g.cs` по имени и href, определение символа под курсором                            |
 | `symbol-loader.ts`          | `DocumentSymbolLoader` — по определению в `*.g.cs` читает href-комментарий и загружает описание обёртки                  |
@@ -84,8 +86,10 @@
   «N references», который считает объединённый результат — прямые ссылки Roslyn плюс места использования
   через обёртки (`ReferenceSearch`).
 - Расчёт отложен (первое число появляется с задержкой), кэшируется и обновляет значение только при изменении
-  набора ссылок; пересчёт запускается по сохранению и закрытию документа, а также периодически для видимых
-  редакторов.
+  набора ссылок. Пересчёт идёт **только по событиям**: сохранение и изменение документа (после паузы),
+  закрытие документа, перегенерация `*.g.cs`.
+- Подписки на события редактора и наблюдатель за файлами собраны в `document-cache-invalidation.ts`: изменение
+  `.resx` или `*.sql` сбрасывает только кэш строк, перегенерация `*.g.cs` — ещё и числа ссылок.
 - Штатная линза «N references» C#-расширения отключается через `configurationDefaults`
   (`dotnet.codeLens.enableReferencesCodeLens: false`), чтобы не было двух счётчиков.
 
@@ -121,6 +125,10 @@
   `vscode.executeDefinitionProvider`;
 - `src/tests/suite/code-lens-provider.test.ts` — юнит-тесты состояния линзы «N references» (текст, отложенный
   расчёт, кэш, событие, dispose, устаревшая позиция) на подменённых зависимостях; без Roslyn;
+- `src/tests/suite/document-lines-cache.test.ts` — юнит-тесты кэша строк (файл читается один раз, инвалидация,
+  правка открытого документа, одновременные чтения одного файла, вытеснение старых записей);
+- `src/tests/suite/document-cache-invalidation.test.ts` — подписки на изменения файлов: запись `.resx` и `.g.cs`
+  вне редактора сбрасывает кэш строк, после отписки изменения файла кэш не трогают;
 - `src/tests/suite/extension.test.ts` — проверка активации расширения.
 
 Запуск:
@@ -130,3 +138,10 @@
 - `npx vscode-test --grep "<подстрока>"` — фильтр по названиям тестов.
 
 тесты удобнее гонять через `npx vscode-test` напрямую. Перед прогоном — `npm run compile`.
+
+Окружение: тесты идут в настоящем окне VS Code (Electron), поэтому флага `--headless` в desktop-запуске нет и
+в `launchArgs` его добавлять не нужно — runner сам передаёт `--no-sandbox`, `--disable-gpu-sandbox`,
+`--disable-updates`, `--disable-workspace-trust`, `--skip-welcome`, `--skip-release-notes` и изолированные
+`--user-data-dir`/`--extensions-dir`. На Linux-агенте нужен виртуальный дисплей (`xvfb-run -a npx vscode-test`),
+на Windows и macOS графическая сессия уже есть. Каталог кэша — `<cwd>/.vscode-test`, минимальный Node — 22
+(`@vscode/test-electron` 3.x).

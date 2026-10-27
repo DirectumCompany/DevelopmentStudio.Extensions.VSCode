@@ -67,6 +67,7 @@ export function getParsedFilePath(filePath: string): IParsedFilePath | null {
  * Получить полное имя ресурса.
  * @param parsedFilePath Данные, извлеченные из пути файла прикладной разработки.
  * @param key Ключ ресурса.
+ * @returns Полное имя ресурса.
  */
 export function getFullQualifiedName(parsedFilePath: IParsedFilePath, key: string): string {
   const companyCode = parsedFilePath.companyName;

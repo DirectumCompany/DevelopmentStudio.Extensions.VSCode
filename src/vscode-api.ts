@@ -1,6 +1,3 @@
-/* eslint-disable jsdoc/require-param */
-/* eslint-disable jsdoc/multiline-blocks */
-/* eslint-disable jsdoc/check-param-names */
 /* eslint-disable jsdoc/require-returns */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/array-type */
@@ -38,14 +35,6 @@ export const findWorkspaceSymbols = async (query: string) => {
  */
 export const getSymbols = async (documentUri: vscode.Uri) => {
   return vscode.commands.executeCommand<vscode.DocumentSymbol[]>('vscode.executeDocumentSymbolProvider', documentUri);
-};
-
-/** Загрузить массив строк из документа.
- * @param documentUri Uri документа, откуда надо загрузить строки.
- */
-export const loadDocumentLines = async (uri: vscode.Uri) => {
-  const dtsDocument = (await vscode.workspace.fs.readFile(uri)).toString();
-  return dtsDocument.split('\n');
 };
 
 /**

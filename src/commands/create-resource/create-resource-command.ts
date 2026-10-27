@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 import * as vscode from 'vscode';
 import { getFullQualifiedName, getParsedFilePath } from './parsed-file-path';
@@ -31,7 +30,11 @@ export async function createResourceFromTextCommand(editor: vscode.TextEditor, c
     return;
   }
 
-  /** Задать выделение в редакторе. */
+  /**
+   * Задать выделенный фрагмент в редакторе.
+   * @param selection Выделенный фрагмент, который нужно установить.
+   * @param needActivateEditor Показывать документ в редакторе после установки выделенного фрагмента.
+   */
   const setSelection = async (selection: vscode.Selection, needActivateEditor = true) => {
     editor.selection = selection;
     if (needActivateEditor) await vscode.window.showTextDocument(editor.document, editor.viewColumn);
@@ -42,7 +45,10 @@ export async function createResourceFromTextCommand(editor: vscode.TextEditor, c
     await setSelection(previousSelection);
   };
 
-  /** Установить фокус после ключа ресурса. */
+  /**
+   * Установить фокус после ключа ресурса.
+   * @param value Ключ ресурса, длина которого определяет позицию курсора.
+   */
   const setFocusAfterResourceKey = async (value: string) => {
     const character = stringPosition.start + value.length;
     const newSelection = new vscode.Selection(
@@ -52,7 +58,11 @@ export async function createResourceFromTextCommand(editor: vscode.TextEditor, c
     await setSelection(newSelection);
   };
 
-  /** Обновить выделенный фрагмент в редакторе и вернуть старое значение выделения. */
+  /**
+   * Обновить выделенный фрагмент в редакторе и вернуть старое значение выделения.
+   * @param selection Новое выделение.
+   * @returns Предыдущее выделение.
+   */
   const updateSelection = async (selection: vscode.Selection): Promise<vscode.Selection> => {
     const previosValue = editor.selection;
 
@@ -102,17 +112,31 @@ export async function createResourceFromTextCommand(editor: vscode.TextEditor, c
  * @param position Позиция.
  * @returns Начало и конец строки или null, если границы строки определить не удалось.
  */
-function getPositions(line: string, position: vscode.Position): { start: number; end: number } | null {
+function getPositions(
+  line: string,
+  position: vscode.Position,
+): {
+  /** Индекс начала строкового литерала в строке. */
+  start: number;
+  /** Индекс конца строкового литерала в строке. */
+  end: number;
+} | null {
   const lineBefore = line.slice(0, position.character);
   const lineAfter = line.slice(position.character);
 
-  /** Найти индекс неэкранированного символа кавычек. */
+  /**
+   * Найти индекс неэкранированного символа кавычек.
+   * @param sourceLine Строка, в которой ищем кавычку.
+   * @param searchFunction Функция поиска символа, начиная с позиции.
+   * @param getNextIndex Функция перехода к следующей позиции поиска.
+   * @returns Индекс неэкранированной кавычки или -1.
+   */
   const findUnescapedQuoteIndex = (
     sourceLine: string,
-    searchFunction: (searchCharacter: string, position?: number | undefined) => number,
+    searchFunction: (searchCharacter: string, position?: number) => number,
     getNextIndex: (previous: number) => number,
   ): number => {
-    let result = -1;
+    let result: number;
     let nextIndex;
     do {
       result = searchFunction(DOUBLE_QUOTE, nextIndex);

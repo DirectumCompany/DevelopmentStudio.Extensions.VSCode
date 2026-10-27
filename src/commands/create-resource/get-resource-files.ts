@@ -19,9 +19,9 @@ type ResourceFiles = Partial<Record<LanguageKeys, string>>;
  * @param parsedFilePath Данные, извлеченные из пути файла прикладной разработки.
  * @returns Возвращается {@linkcode ResourceFiles информацию по расположению} или null.
  */
-export async function getResourceFiles(parsedFilePath: IParsedFilePath): Promise<ResourceFiles | null> {
+export function getResourceFiles(parsedFilePath: IParsedFilePath): Promise<ResourceFiles | null> {
   const resourceDir = getResourceDir(parsedFilePath);
-  if (!resourceDir || !fs.existsSync(resourceDir)) return null;
+  if (!resourceDir || !fs.existsSync(resourceDir)) return Promise.resolve(null);
 
   const filePaths: ResourceFiles = {};
   const resourceFileName =
@@ -30,12 +30,13 @@ export async function getResourceFiles(parsedFilePath: IParsedFilePath): Promise
     const fullPath = path.join(resourceDir, getResourceFileName(resourceFileName, language));
     filePaths[language] = fullPath;
   });
-  return filePaths;
+  return Promise.resolve(filePaths);
 }
 
 /**
  * Вернуть папку, где расположены resx-файлы.
  * @param parsedFilePath Данные, извлеченные из пути файла прикладной разработки.
+ * @returns Папка с resx-файлами или null.
  */
 function getResourceDir(parsedFilePath: IParsedFilePath): string | null {
   const sharedProjectDir = findSharedProjectDir(parsedFilePath.sourcePath);
@@ -58,6 +59,7 @@ function getResourceDir(parsedFilePath: IParsedFilePath): string | null {
 /**
  * Найти Shared-папку.
  * @param filePath Путь, с которого начинаем поиск.
+ * @returns Путь до Shared-папки или null.
  */
 function findSharedProjectDir(filePath: string): string | null {
   let dir = path.dirname(filePath);
@@ -81,7 +83,8 @@ function findSharedProjectDir(filePath: string): string | null {
  * Получить имя файла ресурсов.
  * @param fileName Имя файла.
  * @param language Язык ресурсов.
+ * @returns Имя файла ресурсов для указанного языка.
  */
-function getResourceFileName(fileName: string, language: string) {
+function getResourceFileName(fileName: string, language: string): string {
   return language === DEFAULT_LANGUAGE ? `${fileName}.resx` : `${fileName}.${language}.resx`;
 }

@@ -3,22 +3,36 @@ import * as tsParser from '@typescript-eslint/parser';
 import { configs as tsEslintConfigs } from 'typescript-eslint';
 
 import jsdoc from 'eslint-plugin-jsdoc';
-import { flatConfigs as importPlugin } from 'eslint-plugin-import';
+import { flatConfigs as importPlugin } from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
 import type { Linter } from 'eslint';
 
+/** Файлы, к которым применимы правила с информацией о типах. */
+const typeScriptFiles = ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'];
+
+/**
+ * Ограничить конфиги указанными файлами.
+ * @description Конфигурации typescript-eslint с информацией о типах не задают `files`, поэтому без ограничения
+ * они применяются и к JS (вебвью-скрипты) и падают на разборе без сервисов парсера.
+ * @param configs Конфигурации.
+ * @param files Шаблоны файлов.
+ * @returns Конфигурации с заданным `files`.
+ */
+const forFiles = (configs: Array<Linter.Config>, files: Array<string>): Array<Linter.Config> =>
+  configs.map((config) => ({ ...config, files }));
+
 export default [
   eslint.configs.recommended,
-  ...tsEslintConfigs.recommendedTypeChecked,
-  ...tsEslintConfigs.stylisticTypeChecked,
-  jsdoc.configs['flat/recommended-typescript'],
-  importPlugin.recommended,
-  importPlugin.typescript,
+  ...forFiles(tsEslintConfigs.recommendedTypeChecked, typeScriptFiles),
+  ...forFiles(tsEslintConfigs.stylisticTypeChecked, typeScriptFiles),
+  { ...jsdoc.configs['flat/recommended-typescript'], files: typeScriptFiles },
+  { ...importPlugin.recommended, files: typeScriptFiles },
+  { ...importPlugin.typescript, files: typeScriptFiles },
   prettier,
   {},
 
   {
-    files: ['**/*.ts'],
+    files: typeScriptFiles,
     ignores: ['./webpack.config.js'],
 
     languageOptions: {
@@ -33,7 +47,7 @@ export default [
     },
 
     settings: {
-      'import/resolver': {
+      'import-x/resolver': {
         typescript: true,
         node: true,
       },
@@ -51,15 +65,15 @@ export default [
       'consistent-return': 'error',
 
       // Правила для import
-      'import/no-absolute-path': 'error',
-      'import/no-mutable-exports': 'error',
-      'import/first': 'error',
-      'import/no-deprecated': 'error',
+      'import-x/no-absolute-path': 'error',
+      'import-x/no-mutable-exports': 'error',
+      'import-x/first': 'error',
+      'import-x/no-deprecated': 'error',
 
-      'import/order': ['error'],
-      'import/newline-after-import': 'error',
-      'import/no-named-default': 'error',
-      'import/no-useless-path-segments': 'error',
+      'import-x/order': ['error'],
+      'import-x/newline-after-import': 'error',
+      'import-x/no-named-default': 'error',
+      'import-x/no-useless-path-segments': 'error',
 
       // Правила для TypeScript
       '@typescript-eslint/array-type': ['error', { default: 'generic' }],
@@ -80,6 +94,18 @@ export default [
           definedTags: ['remarks'],
         },
       ],
+    },
+  },
+  {
+    files: ['src/commands/media/**/*.js'],
+
+    languageOptions: {
+      // Вебвью-скрипт исполняется в окне webview: доступны DOM и API VS Code.
+      globals: {
+        document: 'readonly',
+        window: 'readonly',
+        acquireVsCodeApi: 'readonly',
+      },
     },
   },
 ] satisfies Array<Linter.Config>;

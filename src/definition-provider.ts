@@ -48,13 +48,12 @@ export class AdditionalDefinitionProvider implements vscode.DefinitionProvider {
     if (this.lock) {
       return Promise.resolve(null);
     }
-    let modifiedDefinitions = null;
     try {
       this.lock = true;
-      modifiedDefinitions = await this.getAdditionalDefinitions(document, position);
+      const modifiedDefinitions = await this.getAdditionalDefinitions(document, position);
+      return Promise.resolve(modifiedDefinitions);
     } finally {
       this.lock = false;
     }
-    return Promise.resolve(modifiedDefinitions);
   }
 }

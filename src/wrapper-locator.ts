@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
+import { documentLinesCache } from './document-lines-cache';
 import { DocumentSymbolLoader } from './symbol-loader';
 import { isWrapperFile } from './utils';
 import * as VSCodeApi from './vscode-api';
@@ -137,7 +138,7 @@ export class WrapperLocator {
       [...byFile.values()].map(async ({ fileUri, symbolRanges }) => {
         if (token?.isCancellationRequested) return [];
 
-        const documentLines = await VSCodeApi.loadDocumentLines(fileUri);
+        const documentLines = await documentLinesCache.get(fileUri);
         const locations = symbolRanges
           .filter((range) => WrapperLocator.hasOriginalHrefNear(documentLines, range, originalPath))
           .filter((range) => WrapperLocator.hasExpectedContainerType(documentLines, range, parentNames))

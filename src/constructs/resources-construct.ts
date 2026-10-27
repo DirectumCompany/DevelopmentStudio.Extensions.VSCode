@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/array-type */
-/* eslint-disable import/order */
+/* eslint-disable import-x/order */
 import * as vscode from 'vscode';
 import fs from 'fs';
 import path from 'path';
 import * as VSCodeApi from '../vscode-api';
+import { documentLinesCache } from '../document-lines-cache';
 import { ElementDetail, ISourceLocation, SupportTextFormatSearch } from '../types';
 import { TextFormatSearcher } from '../searchers/searcher-resources-or-queries';
 import { DocumentSymbolLoader } from '../symbol-loader';
@@ -78,7 +79,7 @@ class ResourceEntityOrReport implements SupportTextFormatSearch {
     const implementation = await this.getImplementation(this.sourceLocation);
     if (!implementation || !isWrapperFile(implementation.uri)) return null;
 
-    const documentLines = await VSCodeApi.loadDocumentLines(implementation.uri);
+    const documentLines = await documentLinesCache.get(implementation.uri);
     const commentInfo = await DocumentSymbolLoader.getInfoFromComment(documentLines, implementation.range);
     const uri = commentInfo.uri;
     return uri?.fsPath ?? null;

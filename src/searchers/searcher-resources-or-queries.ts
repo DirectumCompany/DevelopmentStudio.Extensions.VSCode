@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
-import * as VSCodeApi from '../vscode-api';
+import { documentLinesCache } from '../document-lines-cache';
 import { IGetSymbols, SupportTextFormatSearch, TextLinesByUri } from '../types';
 
 /** Поисковик описания по текстовым файлам. */
@@ -64,7 +64,7 @@ export class TextFormatSearcher implements IGetSymbols {
   private async getTextLinesByUri(uri: vscode.Uri): Promise<string[]> {
     const index = uri.path;
     if (!this.textLinesByUriDictionary[index] || this.textLinesByUriDictionary[index].length === 0) {
-      this.textLinesByUriDictionary[index] = await VSCodeApi.loadDocumentLines(uri);
+      this.textLinesByUriDictionary[index] = await documentLinesCache.get(uri);
     }
     return Promise.resolve(this.textLinesByUriDictionary[index]);
   }

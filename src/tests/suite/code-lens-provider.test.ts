@@ -8,7 +8,6 @@ import { WrapperLocator } from '../../wrapper-locator';
 /** Приватные статические задержки провайдера, укорачиваемые в тестах. */
 interface IProviderTimers {
   firstCountDelayMs: number;
-  refreshIntervalMs: number;
 }
 
 /** Данные объявления, прикрепляемые провайдером к линзе. */
@@ -89,7 +88,6 @@ suite('AdditionalCodeLensProvider', function () {
 
   setup(() => {
     timers.firstCountDelayMs = 20;
-    timers.refreshIntervalMs = 60000;
     computeResult = [];
     computeCalls = 0;
     WrapperLocator.findReferenceableDeclarations = (): Promise<Array<vscode.DocumentSymbol>> =>
@@ -105,7 +103,6 @@ suite('AdditionalCodeLensProvider', function () {
 
   suiteTeardown(() => {
     timers.firstCountDelayMs = 1500;
-    timers.refreshIntervalMs = 15000;
     logger.dispose();
   });
 
@@ -159,28 +156,54 @@ suite('AdditionalCodeLensProvider', function () {
     subscription.dispose();
   });
 
-  test('recompute does not fire for an unchanged set and fires for a changed one', async () => {
-    computeResult = [location(0)];
+  test('a compute that finished after invalidateAll does not restore the stale count', async () => {
     const lens = await firstLens();
-    const first = nextChange(provider);
+    let release: ((locations: Array<vscode.Location>) => void) | undefined;
+    (provider as unknown as IProviderInternals).countReferences = (): Promise<Array<vscode.Location>> =>
+      new Promise<Array<vscode.Location>>((resolve) => {
+        release = resolve;
+      });
+
     provider.resolveCodeLens(lens);
-    await first;
+    await delay(80);
+    provider.invalidateAll();
+    assert.ok(release, 'the count must be running when the cache is dropped');
+    release([location(0)]);
+    await delay(80);
 
-    let fired = false;
-    const subscription = provider.onDidChangeCodeLenses(() => {
-      fired = true;
-    });
+    const repeated = await firstLens();
+    provider.resolveCodeLens(repeated);
 
-    provider.refreshReferences();
-    await delay(150);
-    assert.strictEqual(fired, false, 'an unchanged set must not fire the change event');
+    assert.strictEqual(
+      repeated.command,
+      undefined,
+      'the count computed before the invalidation must not be cached',
+    );
+  });
 
-    computeResult = [location(0), location(1)];
-    const changed = nextChange(provider);
-    provider.refreshReferences();
-    await changed;
-    assert.strictEqual(fired, true, 'a changed set must fire the change event');
-    subscription.dispose();
+  test('clearing another document does not drop the running compute', async () => {
+    const lens = await firstLens();
+    let release: ((locations: Array<vscode.Location>) => void) | undefined;
+    (provider as unknown as IProviderInternals).countReferences = (): Promise<Array<vscode.Location>> =>
+      new Promise<Array<vscode.Location>>((resolve) => {
+        release = resolve;
+      });
+
+    provider.resolveCodeLens(lens);
+    await delay(80);
+    provider.clearDocumentReferences(vscode.Uri.file('D:/other-workspace/Other.cs'));
+    assert.ok(release, 'the count must be running when another document is closed');
+    release([location(0)]);
+    await delay(80);
+
+    const repeated = await firstLens();
+    provider.resolveCodeLens(repeated);
+
+    assert.strictEqual(
+      repeated.command?.title,
+      '1 reference',
+      'closing another document must not drop the count of this one',
+    );
   });
 
   test('resolving the same target twice counts references once', async () => {
@@ -194,6 +217,54 @@ suite('AdditionalCodeLensProvider', function () {
     assert.strictEqual(computeCalls, 1, 'a repeated resolve must not schedule a second count');
   });
 
+  test('invalidateAll keeps the shown count and schedules a recount', async () => {
+    computeResult = [location(0)];
+    const lens = await firstLens();
+    const first = nextChange(provider);
+    provider.resolveCodeLens(lens);
+    await first;
+    provider.resolveCodeLens(lens);
+    assert.strictEqual(lens.command?.title, '1 reference', 'the count must be cached');
+
+    let fired = false;
+    const subscription = provider.onDidChangeCodeLenses(() => {
+      fired = true;
+    });
+    provider.invalidateAll();
+    assert.strictEqual(fired, true, 'invalidateAll must fire the change event');
+
+    // Устаревшее число показывается сразу, а свежее считается в фоне.
+    computeResult = [location(0), location(1)];
+    const refreshed = await firstLens();
+    const recount = nextChange(provider);
+    provider.resolveCodeLens(refreshed);
+    assert.strictEqual(refreshed.command?.title, '1 reference', 'the stale count must stay visible');
+    await recount;
+
+    const updated = await firstLens();
+    provider.resolveCodeLens(updated);
+    assert.strictEqual(updated.command?.title, '2 references', 'the fresh count must replace the stale one');
+    subscription.dispose();
+  });
+
+  test('an empty recount removes the stale count', async () => {
+    computeResult = [location(0)];
+    const lens = await firstLens();
+    const first = nextChange(provider);
+    provider.resolveCodeLens(lens);
+    await first;
+
+    provider.invalidateAll();
+    computeResult = [];
+    const refreshed = await firstLens();
+    const recount = nextChange(provider);
+    provider.resolveCodeLens(refreshed);
+    await recount;
+
+    const after = await firstLens();
+    provider.resolveCodeLens(after);
+    assert.strictEqual(after.command, undefined, 'an empty recount must drop the stale count');
+  });
   test('clearDocumentReferences drops the cached count', async () => {
     computeResult = [location(0)];
     const lens = await firstLens();
@@ -233,26 +304,22 @@ suite('AdditionalCodeLensProvider', function () {
     assert.strictEqual(computeCalls, 0, 'a pending compute must not run after dispose');
   });
 
-  test('dispose stops the periodic recheck of visible documents', async () => {
-    timers.refreshIntervalMs = 40;
+  test('idle does not recompute anything (no periodic recheck)', async () => {
     computeResult = [location(0)];
-    const disposableProvider = new AdditionalCodeLensProvider(logger);
-    stubCompute(disposableProvider);
     const document = await vscode.workspace.openTextDocument(sourceUri);
     await vscode.window.showTextDocument(document);
 
-    const lens = await lensFor(disposableProvider);
-    const changed = nextChange(disposableProvider);
-    disposableProvider.resolveCodeLens(lens);
+    const lens = await firstLens();
+    const changed = nextChange(provider);
+    provider.resolveCodeLens(lens);
     await changed;
 
-    await delay(200);
-    assert.ok(computeCalls > 1, 'the periodic recheck must recompute visible documents');
+    const afterFirstCount = computeCalls;
+    // Ожидание реальных 2 с здесь вынужденное: проверяется именно отсутствие пересчёта в простое,
+    // ускорить паузу нельзя - иначе между расчётами не останется окна наблюдения.
+    await delay(2000);
 
-    disposableProvider.dispose();
-    const afterDispose = computeCalls;
-    await delay(200);
-    assert.strictEqual(computeCalls, afterDispose, 'the periodic recheck must stop after dispose');
+    assert.strictEqual(computeCalls, afterFirstCount, 'an idle provider must not recompute references');
   });
 
   test('a stale position yields no references and is not cached', async () => {

@@ -5,7 +5,7 @@ import * as VSCodeApi from './vscode-api';
 import { WrapperLocator } from './wrapper-locator';
 
 /** Объявление, к которому привязана линза. */
-interface IDeclarationCodeLens {
+interface ICodeLensDeclaration {
   /** Uri документа с объявлением. */
   documentUri: vscode.Uri;
   /** Позиция объявления. */
@@ -15,15 +15,17 @@ interface IDeclarationCodeLens {
 /** Линза с прикреплёнными данными объявления. */
 interface ICodeLensData extends vscode.CodeLens {
   /** Данные объявления. */
-  declaration?: IDeclarationCodeLens;
+  declaration?: ICodeLensDeclaration;
 }
 
 /** Запись кэша: объявление и найденные для него ссылки. */
 interface ICodeLensCacheEntry {
   /** Данные объявления. */
-  declaration: IDeclarationCodeLens;
+  declaration: ICodeLensDeclaration;
   /** Найденные ссылки. */
   references: Array<vscode.Location>;
+  /** Признак, что после события число устарело и требует пересчёта. */
+  stale: boolean;
 }
 
 /**
@@ -31,6 +33,9 @@ interface ICodeLensCacheEntry {
  * @description Штатная линза C#-расширения считает только прямые ссылки Roslyn и не учитывает места
  * использования через обёртки. Линза считает объединённые ссылки, но с задержкой и обновляет число
  * только когда набор ссылок реально изменился.
+ *
+ * Числа пересчитываются **только по событиям** (изменение, сохранение и закрытие документа, перегенерация
+ * обёрток).
  */
 export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vscode.Disposable {
   /** Эмиттер изменения списка линз. */
@@ -39,26 +44,23 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
   /** Задержка первого расчёта числа ссылок (мс). */
   private static readonly firstCountDelayMs = 1500;
 
-  /** Период перепроверки ссылок видимых документов (мс). */
-  private static readonly refreshIntervalMs = 15000;
-
   /** Кэш ссылок: ключ (uri + позиция) -> объявление и ссылки. */
   private readonly referenceCounts = new Map<string, ICodeLensCacheEntry>();
 
   /** Отложенные расчёты: ключ объявления -> таймер. */
   private readonly pendingCounts = new Map<string, NodeJS.Timeout>();
 
-  /** Таймер периодической перепроверки видимых документов. */
-  private readonly refreshTimer = setInterval(
-    () => void this.refreshVisibleDocuments(),
-    AdditionalCodeLensProvider.refreshIntervalMs,
-  );
+  /** Отложенное событие изменения линз: коалессинг пачки завершённых расчётов. */
+  private fireTimer: NodeJS.Timeout | undefined;
 
-  /** Признак, что пересчёт уже идёт (защита от наложения). */
-  private isRecomputing = false;
-
-  /** Признак, что во время пересчёта запросили ещё один (нужно повторить). */
-  private isRecomputeQueued = false;
+  /**
+   * Поколение инвалидации: растёт при полном сбросе кэша.
+   * @description Расчёт ссылок асинхронный, поэтому результат, запущенный до сброса, не должен попасть обратно
+   * в кэш: иначе линза покажет устаревшее число до следующего события. Растёт только при полном сбросе:
+   * при закрытии одного документа его расчёты гасятся удалением записей и таймеров, а расчёты других
+   * документов не должны отбрасываться - иначе незакрытые линзы пересчитываются бесконечно.
+   */
+  private invalidationGeneration = 0;
 
   /** Событие изменения списка линз. */
   public readonly onDidChangeCodeLenses = this.lensesChanged.event;
@@ -70,11 +72,18 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
   constructor(private readonly logger: vscode.LogOutputChannel) {}
 
   /**
-   * Пересчитать ссылки и уведомить, если они изменились.
-   * @param documentUri Ограничить пересчёт одним документом.
+   * Пометить все закэшированные числа ссылок устаревшими: набор ссылок мог измениться в любом файле.
+   * @description Линзы воркбенч перезапрашивает сам (событие onDidChangeCodeLenses), а расчёт остаётся
+   * ленивым - при разрешении линзы. Прежнее число не сбрасывается: подписи не должны пропадать на время
+   * пересчёта, а свежее значение заменит его по готовности.
    */
-  public refreshReferences(documentUri?: vscode.Uri): void {
-    void this.recomputeReferences(documentUri);
+  public invalidateAll(): void {
+    for (const timer of this.pendingCounts.values()) clearTimeout(timer);
+    this.pendingCounts.clear();
+    for (const entry of this.referenceCounts.values()) entry.stale = true;
+    this.invalidationGeneration++;
+    ReferenceSearch.clearCache();
+    this.lensesChanged.fire();
   }
 
   /**
@@ -82,34 +91,36 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
    * @param uri Uri документа.
    */
   public clearDocumentReferences(uri: vscode.Uri): void {
-    const prefix = `${uri.toString()}|`;
-    for (const [key, timer] of this.pendingCounts) {
-      if (!key.startsWith(prefix)) continue;
-      clearTimeout(timer);
-      this.pendingCounts.delete(key);
-    }
-    for (const key of this.referenceCounts.keys()) {
-      if (key.startsWith(prefix)) this.referenceCounts.delete(key);
-    }
+    this.dropDocumentEntries(uri);
   }
 
   /** Освободить ресурсы. */
   public dispose(): void {
-    clearInterval(this.refreshTimer);
     for (const timer of this.pendingCounts.values()) clearTimeout(timer);
     this.pendingCounts.clear();
+    this.invalidationGeneration++;
+    if (this.fireTimer) {
+      clearTimeout(this.fireTimer);
+      this.fireTimer = undefined;
+    }
     this.lensesChanged.dispose();
   }
 
   /**
    * Вернуть линзы для объявлений документа.
    * @param document Документ.
+   * @param token Токен отмены.
    * @returns Массив {@link vscode.CodeLens линз}.
    */
-  public async provideCodeLenses(document: vscode.TextDocument): Promise<Array<vscode.CodeLens>> {
+  public async provideCodeLenses(
+    document: vscode.TextDocument,
+    token?: vscode.CancellationToken,
+  ): Promise<Array<vscode.CodeLens>> {
     if (isWrapperFile(document.uri)) return [];
 
     const declarations = await WrapperLocator.findReferenceableDeclarations(document.uri);
+    if (token?.isCancellationRequested) return [];
+
     return declarations.map((symbol) => {
       const codeLens = new vscode.CodeLens(symbol.selectionRange) as ICodeLensData;
       codeLens.declaration = { documentUri: document.uri, position: symbol.selectionRange.start };
@@ -119,6 +130,8 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
 
   /**
    * Разрешить линзу: показать закэшированное число либо запланировать отложенный расчёт.
+   * @description Устаревшее число показывается сразу, а свежее считается в фоне: подпись не должна
+   * пропадать на время пересчёта.
    * @param codeLens Линза.
    * @returns Линза с командой показа списка.
    */
@@ -132,6 +145,8 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
       return codeLens;
     }
 
+    if (entry.stale) this.scheduleCount(declaration);
+
     codeLens.command = {
       title: entry.references.length === 1 ? '1 reference' : `${entry.references.length} references`,
       command: 'editor.action.showReferences',
@@ -144,75 +159,51 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
    * Запланировать отложенный расчёт числа ссылок.
    * @param declaration Данные объявления.
    */
-  private scheduleCount(declaration: IDeclarationCodeLens): void {
+  /**
+   * Запросить одно событие изменения линз на пачку завершённых расчётов.
+   */
+  private queueLensesChanged(): void {
+    if (this.fireTimer) return;
+    this.fireTimer = setTimeout(() => {
+      this.fireTimer = undefined;
+      this.lensesChanged.fire();
+    }, 0);
+  }
+
+  private scheduleCount(declaration: ICodeLensDeclaration): void {
     const key = AdditionalCodeLensProvider.declarationCacheKey(declaration);
     if (this.pendingCounts.has(key)) return;
 
+    const generation = this.invalidationGeneration;
     const timer = setTimeout(() => {
       this.pendingCounts.delete(key);
       void this.countReferences(declaration).then((locations) => {
-        if (locations.length === 0) return;
-        this.referenceCounts.set(key, { declaration, references: locations });
-        this.lensesChanged.fire();
+        if (generation !== this.invalidationGeneration) return;
+        if (locations.length === 0) {
+          // Устаревшая подпись должна исчезнуть, а пустой результат по-прежнему не кэшируется.
+          if (this.referenceCounts.delete(key)) this.queueLensesChanged();
+          return;
+        }
+        this.referenceCounts.set(key, { declaration, references: locations, stale: false });
+        this.queueLensesChanged();
       });
     }, AdditionalCodeLensProvider.firstCountDelayMs);
     this.pendingCounts.set(key, timer);
   }
 
-  /** Перепроверить ссылки объявлений видимых документов. */
-  private async refreshVisibleDocuments(): Promise<void> {
-    const visible = new Set(vscode.window.visibleTextEditors.map((editor) => editor.document.uri.toString()));
-    await this.recomputeCachedCounts((entry): boolean => visible.has(entry.declaration.documentUri.toString()));
-  }
-
   /**
-   * Пересчитать ссылки.
-   * @param documentUri Ограничить пересчёт одним документом.
+   * Забыть записи кэша и отложенные расчёты документа.
+   * @param uri Uri документа.
    */
-  private async recomputeReferences(documentUri?: vscode.Uri): Promise<void> {
-    await this.recomputeCachedCounts(
-      documentUri ? (entry): boolean => entry.declaration.documentUri.toString() === documentUri.toString() : undefined,
-    );
-  }
-
-  /**
-   * Пересчитать закэшированные числа ссылок по фильтру и уведомить, если они изменились.
-   * @description Кэш ссылок сбрасывается всегда, даже если пересчёт уже идёт; пропущенный из-за занятости
-   * пересчёт повторяется после завершения текущего.
-   * @param match Фильтр записей; без него берутся все.
-   */
-  private async recomputeCachedCounts(match?: (entry: ICodeLensCacheEntry) => boolean): Promise<void> {
-    ReferenceSearch.clearCache();
-
-    if (this.isRecomputing) {
-      this.isRecomputeQueued = true;
-      return;
+  private dropDocumentEntries(uri: vscode.Uri): void {
+    const prefix = `${uri.toString()}|`;
+    for (const [key, timer] of this.pendingCounts) {
+      if (!key.startsWith(prefix)) continue;
+      clearTimeout(timer);
+      this.pendingCounts.delete(key);
     }
-
-    this.isRecomputing = true;
-
-    try {
-      let changed = false;
-      for (const [key, entry] of this.referenceCounts) {
-        if (match && !match(entry)) continue;
-
-        const references = await this.countReferences(entry.declaration);
-        if (AdditionalCodeLensProvider.isSameLocations(references, entry.references)) continue;
-
-        if (references.length === 0) this.referenceCounts.delete(key);
-        else this.referenceCounts.set(key, { declaration: entry.declaration, references: references });
-
-        changed = true;
-      }
-
-      if (changed) this.lensesChanged.fire();
-    } finally {
-      this.isRecomputing = false;
-    }
-
-    if (this.isRecomputeQueued) {
-      this.isRecomputeQueued = false;
-      await this.recomputeCachedCounts();
+    for (const key of [...this.referenceCounts.keys()]) {
+      if (key.startsWith(prefix)) this.referenceCounts.delete(key);
     }
   }
 
@@ -223,7 +214,7 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
    * @param declaration Данные объявления.
    * @returns Ссылки.
    */
-  private async countReferences(declaration: IDeclarationCodeLens): Promise<Array<vscode.Location>> {
+  private async countReferences(declaration: ICodeLensDeclaration): Promise<Array<vscode.Location>> {
     try {
       const document = await vscode.workspace.openTextDocument(declaration.documentUri);
       if (declaration.position.line >= document.lineCount) return [];
@@ -239,32 +230,11 @@ export class AdditionalCodeLensProvider implements vscode.CodeLensProvider, vsco
   }
 
   /**
-   * Совпадают ли наборы ссылок.
-   * @param left Первый набор.
-   * @param right Второй набор.
-   * @returns true - если наборы одинаковы.
-   */
-  private static isSameLocations(left: Array<vscode.Location>, right: Array<vscode.Location>): boolean {
-    if (left.length !== right.length) return false;
-    const keys = new Set(left.map((location) => AdditionalCodeLensProvider.locationCacheKey(location)));
-    return right.every((location) => keys.has(AdditionalCodeLensProvider.locationCacheKey(location)));
-  }
-
-  /**
    * Ключ объявления для кэша.
    * @param declaration Данные объявления.
    * @returns Строковый ключ.
    */
-  private static declarationCacheKey(declaration: IDeclarationCodeLens): string {
+  private static declarationCacheKey(declaration: ICodeLensDeclaration): string {
     return `${declaration.documentUri.toString()}|${declaration.position.line}:${declaration.position.character}`;
-  }
-
-  /**
-   * Ключ ссылки для кэша.
-   * @param location Ссылка.
-   * @returns Строковый ключ.
-   */
-  private static locationCacheKey(location: vscode.Location): string {
-    return `${location.uri.toString()}|${location.range.start.line}:${location.range.start.character}`;
   }
 }

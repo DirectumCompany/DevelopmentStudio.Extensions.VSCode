@@ -3,6 +3,18 @@ import { IUpdateInfo, updateResourceFiles } from './update-resource-files';
 import { IParsedFilePath } from './parsed-file-path';
 import { getResourceFiles } from './get-resource-files';
 
+/** Сообщение, приходящее из webview формы создания ресурса. */
+interface IWebviewMessage {
+  /** Команда, выбранная в форме. */
+  command: string;
+  /** Ключ создаваемого ресурса. */
+  input: string;
+  /** Значение ресурса для языка ru. */
+  ru: string;
+  /** Значение ресурса для языка en. */
+  en: string;
+}
+
 /** Панель с webview. */
 let currentPanel: vscode.WebviewPanel | undefined = undefined;
 
@@ -47,7 +59,7 @@ export async function runResourceDialog(
     );
     currentPanel.webview.html = getWebviewContent(cssUri, jsUri, stringValue, currentPanel.webview.cspSource);
     currentPanel.webview.onDidReceiveMessage(
-      async (message: { command: string; input: string; ru: string; en: string }): Promise<void> => {
+      async (message: IWebviewMessage): Promise<void> => {
         switch (message.command) {
           case 'createResource': {
             const resourceKey = message.input;
@@ -93,7 +105,14 @@ export async function runResourceDialog(
   }
 }
 
-/** Вернуть контент для webview. */
+/**
+ * Вернуть контент для webview.
+ * @param cssUri Uri стилей webview.
+ * @param jsUri Uri скрипта webview.
+ * @param currentText Текущее значение строковой константы.
+ * @param cspSource Источник для Content-Security-Policy.
+ * @returns HTML-контент webview.
+ */
 function getWebviewContent(cssUri: vscode.Uri, jsUri: vscode.Uri, currentText: string, cspSource: string): string {
   const nonce = getNonce();
 
@@ -135,10 +154,10 @@ function getWebviewContent(cssUri: vscode.Uri, jsUri: vscode.Uri, currentText: s
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <meta http-equiv="Content-Security-Police" content="default-src 'none'; style-src ${cspSource}; script-src 'nonce-${nonce}';">
+      <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource}; script-src 'nonce-${nonce}';">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${title}</title>
-      <link rel="stylesheet" href="${cssUri}">
+      <link rel="stylesheet" href="${cssUri.toString()}">
     </head>
     <body>
       <div class="container">
@@ -151,13 +170,16 @@ function getWebviewContent(cssUri: vscode.Uri, jsUri: vscode.Uri, currentText: s
         </section>
       </div>
     
-      <script nonce="${nonce}" src="${jsUri}"></script>
+      <script nonce="${nonce}" src="${jsUri.toString()}"></script>
     </body>
     </html>`;
 }
 
-/** Сгенерировать случайную строку */
-function getNonce() {
+/**
+ * Сгенерировать случайную строку.
+ * @returns Случайная строка для nonce.
+ */
+function getNonce(): string {
   let text = '';
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < 32; i++) {

@@ -1,9 +1,9 @@
 /* eslint-disable jsdoc/check-param-names */
 /* eslint-disable jsdoc/multiline-blocks */
 /* eslint-disable @typescript-eslint/array-type */
-/* eslint-disable import/order */
+/* eslint-disable import-x/order */
 import * as vscode from 'vscode';
-import * as VSCodeApi from '../vscode-api';
+import { documentLinesCache } from '../document-lines-cache';
 import { SymbolSearcher } from './symbol-searcher-base';
 import { NameAndDetail, SupportUriFromComment } from '../types';
 
@@ -22,7 +22,7 @@ export class SymbolSearcherByHrefComment extends SymbolSearcher {
    */
   private async getTextLine(uri: vscode.Uri, position: vscode.Position): Promise<string> {
     if (this.textLines.length === 0) {
-      this.textLines = await VSCodeApi.loadDocumentLines(uri);
+      this.textLines = await documentLinesCache.get(uri);
     }
     return Promise.resolve(position.line < this.textLines.length - 1 ? this.textLines[position.line] : '');
   }

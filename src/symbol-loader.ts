@@ -3,8 +3,8 @@
 /* eslint-disable @typescript-eslint/prefer-regexp-exec */
 /* eslint-disable @typescript-eslint/array-type */
 import * as vscode from 'vscode';
+import { documentLinesCache } from './document-lines-cache';
 import { isWrapperFile } from './utils';
-import * as VSCodeApi from './vscode-api';
 import { SymbolSearcher } from './searchers/symbol-searcher-base';
 import { InfoFromComment, IGetOriginalSymbols, ElementDetail, createWrapperConstruct, NameAndDetail } from './types';
 
@@ -87,7 +87,7 @@ export class DocumentSymbolLoader {
 
   /** Загрузить массив строк из документа. */
   private async loadDocumentLines() {
-    this.documentLines = await VSCodeApi.loadDocumentLines(this.uri);
+    this.documentLines = await documentLinesCache.get(this.uri);
   }
 
   /**

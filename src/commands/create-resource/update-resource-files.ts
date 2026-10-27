@@ -21,8 +21,9 @@ export async function updateResourceFiles(resourceKey: string, updateInfos: Arra
         location: vscode.ProgressLocation.Window,
         title: `Adding resource "${resourceKey}" to ${updateInfo.filePath}...`,
       },
-      async () => {
+      () => {
         addResourceToResourceFile(updateInfo.filePath, resourceKey, updateInfo.value);
+        return Promise.resolve();
       },
     );
   }
@@ -69,6 +70,7 @@ function addResourceToResourceFile(resourceFilePath: string, key: string, value:
  * Проверить существует ли ресурс с заданным ключом в ресурсном файле.
  * @param key Ключ.
  * @param content Содержимое ресурсного файла.
+ * @returns Признак наличия ключа в файле.
  */
 function checkKeyExists(key: string, content: string): boolean {
   const regex = /<data\s+name="([^"]*)"\s*xml:space="preserve">/g;
@@ -83,6 +85,7 @@ function checkKeyExists(key: string, content: string): boolean {
  * Сформировать строку для добавления в ресурсный файл.
  * @param key Ключ ресурса.
  * @param value Значение ресурса.
+ * @returns Строка с элементом data для ресурсного файла.
  */
 function buildDataEntry(key: string, value: string): string {
   const escapedValue = value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

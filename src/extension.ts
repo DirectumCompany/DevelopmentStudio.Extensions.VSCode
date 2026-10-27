@@ -7,6 +7,8 @@
 import * as vscode from 'vscode';
 import { AdditionalCodeLensProvider } from './code-lens-provider';
 import { AdditionalDefinitionProvider } from './definition-provider';
+import { documentLinesCache } from './document-lines-cache';
+import { registerDocumentCacheInvalidation } from './document-cache-invalidation';
 import { AdditionalReferenceProvider } from './reference-provider';
 import { addStatusBarCommand, showSettingsUpdateDialog } from './settings';
 import { opensInPeekCommand } from './commands/open-in-peek/open-in-peek-command';
@@ -42,8 +44,11 @@ export async function activate(context: vscode.ExtensionContext) {
   }
 
   const codeLensProvider = new AdditionalCodeLensProvider(logger);
+
   context.subscriptions.push(
     codeLensProvider,
+    documentLinesCache,
+    registerDocumentCacheInvalidation({ codeLensProvider }),
     vscode.languages.registerDefinitionProvider(
       { language: 'csharp', scheme: 'file' },
       new AdditionalDefinitionProvider(),
@@ -53,10 +58,6 @@ export async function activate(context: vscode.ExtensionContext) {
       new AdditionalReferenceProvider(),
     ),
     vscode.languages.registerCodeLensProvider({ language: 'csharp', scheme: 'file' }, codeLensProvider),
-    vscode.workspace.onDidSaveTextDocument((document) => {
-      if (document.languageId === 'csharp') codeLensProvider.refreshReferences(document.uri);
-    }),
-    vscode.workspace.onDidCloseTextDocument((document) => codeLensProvider.clearDocumentReferences(document.uri)),
   );
 
   logger.info('The definition, link, and CodeLens providers are registered');
