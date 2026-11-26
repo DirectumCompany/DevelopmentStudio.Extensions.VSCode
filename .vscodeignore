@@ -17,3 +17,7 @@ out/**
 .prettierignore
 **/*.bak
 **/tsconfig.eslint.json
+**/.idea/**
+.github/**
+AGENTS.md
+CONTRIBUTING.md

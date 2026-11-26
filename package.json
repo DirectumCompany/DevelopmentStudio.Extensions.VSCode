@@ -3,7 +3,7 @@
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
   "version": "1.0.10",
-  "publisher": "sungero",
+  "publisher": "directum",
   "icon": "assets/images/ds-icon.png",
   "engines": {
     "vscode": "^1.89.1",
@@ -12,6 +12,19 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "sungero",
+    "directum",
+    "development studio",
+    "csharp",
+    "c#",
+    "resx",
+    "code navigation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DirectumCompany/DevelopmentStudio.Extensions.VSCode"
+  },
   "activationEvents": [
     "workspaceContains:**/*.csproj",
     "onLanguage:csharp"
