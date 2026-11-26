@@ -2,7 +2,7 @@
   "name": "development-studio-vscode-extension",
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "publisher": "directum",
   "icon": "assets/images/ds-icon.png",
   "engines": {
@@ -25,6 +25,7 @@
     "type": "git",
     "url": "https://github.com/DirectumCompany/DevelopmentStudio.Extensions.VSCode"
   },
+  "license": "MIT",
   "activationEvents": [
     "workspaceContains:**/*.csproj",
     "onLanguage:csharp"
