@@ -3,7 +3,7 @@
   "displayName": "Development Studio",
   "description": "Development Studio Extension for VS Code",
   "version": "1.0.11",
-  "publisher": "directum",
+  "publisher": "sungero",
   "icon": "assets/images/ds-icon.png",
   "engines": {
     "vscode": "^1.89.1",
